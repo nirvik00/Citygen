@@ -36,7 +36,7 @@ void ofApp::nsInit() {
 		
 	
 	hullPts = geomMethods.initConvexHull(sitePtVec, gridPtVec);
-	cout << "\t REGIONS constructed...going to next step" << endl;
+	std::cout << "\t REGIONS constructed...going to next step" << endl;
 
 	//scale hull down	
 	for (int i = 0; i < hullPts.size(); i++) {
@@ -66,12 +66,12 @@ void ofApp::nsInit() {
 	}
 	
 	//scaleHullPts = hullPts;
-	cout << "\t Hulls constructed...going to next step" << endl;
+	std::cout << "\t Hulls constructed...going to next step" << endl;
 	nsOccupy();
 }
 
 void ofApp::nsOccupy() {
-	cout << "2/2-> Command received at nsOCCUPY...2 objectives here " << endl;
+	std::cout << "2/2-> Command received at nsOCCUPY...2 objectives here " << endl;
 	for (int i = 0; i < scaleHullPts.size(); i++) {
 		vector<Pt> temp = scaleHullPts[i];
 		Pt spA, spB; float maxD = -1;
@@ -87,7 +87,7 @@ void ofApp::nsOccupy() {
 		}
 		spinevec.push_back(Seg(spA, spB));
 	}
-	cout << "\t Spine constructed" << endl;
+	std::cout << "\t Spine constructed" << endl;
 	for (int i = 0; i < spinevec.size(); i++) {
 		vector<Seg>segvec; vector<Seg> segvecL; vector<Seg> segvecR;
 		vector<Pt>hullpts = scaleHullPts[i];
@@ -144,7 +144,7 @@ void ofApp::nsOccupy() {
 		}
 		blockvec.push_back(Block(segvec, hullpts));
 	}
-	cout << "\t Bays constructed" << endl;
+	std::cout << "\t Bays constructed" << endl;
 	for (int i = 0; i < blockvec.size(); i++) {
 		vector<Quad> qv;
 		vector<Seg>segvec = blockvec[i].seg;
@@ -157,7 +157,7 @@ void ofApp::nsOccupy() {
 		}
 		blockvec[i].setQuadVec(qv);
 	}
-	cout << "Objective complete at nsOCCUPY\nITERATION NUMBER= " << ITERATION << "\n\n\n" << endl;
+	std::cout << "Objective complete at nsOCCUPY\nITERATION NUMBER= " << ITERATION << "\n\n\n" << endl;
 	nsGenCell();
 }
 
@@ -185,7 +185,7 @@ void ofApp::nsGenCell() {
 		}
 		blockvec[i].setCellVec(cellvec);
 	}
-	cout << "Objective complete at nsGENCELL" << endl;
+	std::cout << "Objective complete at nsGENCELL" << endl;
 	nsInteract();
 }
 
@@ -206,13 +206,13 @@ void ofApp::nsInteract() {
 				}
 				int S = ofRandom(0, 10);
 				if (S < 4) {
-					ht = 2;
+					ht = 1;
 				}
 				else if (S > 3 && S < 5) {
-					ht = 5;
+					ht = 2;
 				}
 				else {
-					ht = 10;
+					ht = 4;
 				}
 				(*j).HEIGHT=ht;
 				(*j).FILL=fill;
@@ -220,10 +220,11 @@ void ofApp::nsInteract() {
 			j++;
 		}
 	}
-	//cout << "Objective complete at nsINTERACTION" << endl;
+	std::cout << "Objective complete at nsINTERACTION" << endl;
 }
 
 void ofApp::setup(){
+	//light.enable();
 	ofEnableDepthTest();
 	ofSetVerticalSync(true);
 	cam.lookAt(ofVec3f(-500, 0, -500));
@@ -297,7 +298,7 @@ void ofApp::keyPressed(int key) {
 	}
 
 	if (key == 'i') {
-		cout << "\n\n INTERACTion command" << endl;
+		std::cout << "\n\n INTERACTion command" << endl;
 		nsInteract();
 	}
 
@@ -305,7 +306,7 @@ void ofApp::keyPressed(int key) {
 		for (int i = 0; i < blockvec.size(); i++) {
 			vector<Cell> cellvec = blockvec[i].cellvec;
 			for (int j = 0; j < cellvec.size(); j++) {
-				cout << " height" << cellvec[j].getHeight() << " Fill: " << cellvec[j].getFill() << endl;
+				std::cout << " height" << cellvec[j].getHeight() << " Fill: " << cellvec[j].getFill() << endl;
 			}
 		}
 	}

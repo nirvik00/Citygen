@@ -55,6 +55,7 @@ struct Quad {
 		ofDrawLine(q.x, q.y, q.z, r.x, r.y, r.z);
 		ofDrawLine(r.x, r.y, r.z, s.x, s.y, s.z);
 		ofDrawLine(s.x, s.y, s.z, p.x, p.y, p.z);
+
 	}
 };
 
@@ -92,15 +93,49 @@ public:
 	}
 	void display2() {
 		if (FILL == 1) {
-			ofSetLineWidth(1);
-			ofSetColor(0, 0, 0, 150);
+
 			for (int e = 0; e < HEIGHT; e++) {
 				float i = e * 10;
+				ofSetLineWidth(2);
+				ofSetColor(0, 0, 0);
 				ofDrawLine(p.x, i, p.z, q.x, i, q.z);
 				ofDrawLine(q.x, i, q.z, r.x, i, r.z);
 				ofDrawLine(r.x, i, r.z, s.x, i, s.z);
 				ofDrawLine(s.x, i, s.z, p.x, i, p.z);
-			}			
+				
+				ofMesh mes;
+				ofPoint p0(p.x, (e - 1) * 10, p.z); ofPoint p1(p.x, e * 10, p.z);
+				ofPoint q0(q.x, (e - 1) * 10, q.z); ofPoint q1(q.x, e * 10, q.z);
+				ofPoint r0(r.x, (e - 1) * 10, r.z); ofPoint r1(r.x, e * 10, r.z);
+				ofPoint s0(s.x, (e - 1) * 10, s.z); ofPoint s1(s.x, e * 10, s.z);
+
+				if (e > 0) {		
+					
+					mes.addVertex(p0); mes.addVertex(q1); mes.addVertex(q0);
+					mes.addVertex(p0); mes.addVertex(q1); mes.addVertex(p1);
+
+					mes.addVertex(q0); mes.addVertex(r1); mes.addVertex(r0);
+					mes.addVertex(q0); mes.addVertex(r1); mes.addVertex(q1);
+
+					mes.addVertex(r0); mes.addVertex(s1); mes.addVertex(r1);
+					mes.addVertex(r0); mes.addVertex(s1); mes.addVertex(s0);
+
+					mes.addVertex(p0); mes.addVertex(s1); mes.addVertex(p1);
+					mes.addVertex(p0); mes.addVertex(s1); mes.addVertex(s0);
+					
+					mes.addVertex(p0); mes.addVertex(q0); mes.addVertex(r0);
+					mes.addVertex(p0); mes.addVertex(s0); mes.addVertex(r0);
+
+				}
+				if (e == HEIGHT-1) {
+					mes.addVertex(p1); mes.addVertex(q1); mes.addVertex(r1);
+					mes.addVertex(p1); mes.addVertex(s1); mes.addVertex(r1);
+				}
+				mes.setupIndicesAuto();
+				ofSetColor(150, 150, 150);
+				mes.draw();
+				
+			}	
 		}
 	}
 };
@@ -152,6 +187,7 @@ public:
 	void gotMessage(ofMessage msg);
 
 	ofEasyCam cam;
+	ofLight light;
 	
 	vector<Colr> colorVec;
 	vector<Pt> sitePtVec;
@@ -165,10 +201,9 @@ public:
 	vector<Seg> spinevec;
 	vector<Block> blockvec;
 	
-
-	int ITERATION = 1;
-	int BOARD_DIMENSION = 300;
-	int NUM_SITES = 3;
+	int ITERATION = 0;
+	int BOARD_DIMENSION = 1500;
+	int NUM_SITES = 25;
 	int CELL_LE = BOARD_DIMENSION / 100;
 	int CELL_WI = BOARD_DIMENSION / 100;
 	int SCALE_HULL = (int)NUM_SITES/5;
