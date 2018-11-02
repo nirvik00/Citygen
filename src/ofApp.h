@@ -264,11 +264,11 @@ public:
 	
 	int ITERATION = 0;
 	// ratio of BOARD_DIMENSION : NUM_SITES = 500 : 5; 1500 : 45
-	int BOARD_DIMENSION = 300;
-	int NUM_SITES = 5;
+	int BOARD_DIMENSION = 700;
+	int NUM_SITES = 7;
 	int CELL_LE = BOARD_DIMENSION / 100;
 	int CELL_WI = BOARD_DIMENSION / 100;
-	int SCALE_HULL = 1; //20 // max(10, (int)NUM_SITES / 15);
+	int SCALE_HULL = 10; //20 // max(10, (int)NUM_SITES / 15);
 	float CELL_LENGTH = 35;
 	float BAY_DEPTH = 35;
 	GeomMethods geomMethods;

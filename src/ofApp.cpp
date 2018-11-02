@@ -322,6 +322,12 @@ void ofApp::nsGenCell() {
 								if (I.x != -1 && I.y != -1 && I.z != -1) {
 									bottom.push_back(e); top.push_back(I);
 								}
+								else { //also handle simple case p-q
+									Pt J = geomMethods.intxPt(e, f, p, q);
+									if (J.x != -1 && J.y != -1 && J.z != -1) {
+										bottom.push_back(e); top.push_back(J);
+									}
+								}
 							}
 						}
 					}
@@ -340,6 +346,12 @@ void ofApp::nsGenCell() {
 								Pt I = geomMethods.intxPt(e, f, r, q);
 								if (I.x != -1 && I.y != -1 && I.z != -1) {
 									bottom.push_back(I); top.push_back(e);
+								}
+								else {
+									Pt J = geomMethods.intxPt(e, f, p, q);
+									if (J.x != -1 && J.y != -1 && J.z != -1) {
+										bottom.push_back(J); top.push_back(e);
+									}
 								}
 							}
 						}
