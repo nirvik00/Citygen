@@ -419,7 +419,18 @@ vector<vector<Pt>> GeomMethods::spine(vector<Pt> pts, float DE, float SP) {
 
 
 
+float GeomMethods::computeAngle(Pt a, Pt b, Pt c) {
+	//angle between ab and ac
+	Pt u(b.x - a.x, b.y - a.y, b.z - a.z);
+	Pt v(c.x - a.x, c.y - a.y, c.z - a.z);
+	float normu = sqrt((u.x*u.x) + (u.y*u.y) + (u.z*u.z));
+	float normv = sqrt((v.x*v.x) + (v.y*v.y) + (v.z*v.z));
+	float dotprod = u.x*v.x + u.y*v.y + u.z*v.z;
+	float ang = acos(dotprod / (normu*normv));
 
+	//cout << ang << ", " << ang * 180 / PI <<endl;
+	return ang;
+}
 
 
 //spline

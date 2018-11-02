@@ -76,12 +76,14 @@ private:
 
 public:
 	Pt p, q, r, s;
-	int CELL_FILL=0, CELL_HEIGHT=0.0; 
+	int CELL_FILL = 0, CELL_HEIGHT = 0.0;
+	float CELL_ANGLE=0;
 	int I, J, Num;		
 	Cell() {}
-	Cell(Pt a, Pt b, Pt c, Pt d, int j, int i, int n) {
+	Cell(Pt a, Pt b, Pt c, Pt d, int j, int i, int n, float cellangle) {
 		p = a; q = b; r = c; s = d;
 		I = i; J = j; Num = n;
+		CELL_ANGLE = cellangle;
 	}
 	void display() {
 		ofSetLineWidth(1);
@@ -90,6 +92,12 @@ public:
 		ofDrawLine(q.x, q.y, q.z, r.x, r.y, r.z);
 		ofDrawLine(r.x, r.y, r.z, s.x, s.y, s.z);
 		ofDrawLine(s.x, s.y, s.z, p.x, p.y, p.z);
+	}
+	void setMinAngle(float t) {
+		CELL_ANGLE = t;
+	}
+	float getMinAngle(float t) {
+		return CELL_ANGLE;
 	}
 	void setHeight(int t) {
 		CELL_HEIGHT = t;

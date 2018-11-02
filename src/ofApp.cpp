@@ -322,10 +322,14 @@ void ofApp::nsGenCell() {
 								Pt I = geomMethods.intxPt(e, f, r, q);
 								Pt J = geomMethods.intxPt(e, f, r, s);
 								if (I.x != -1 && I.y != -1 && I.z != -1) {
-									bottom.push_back(e); top.push_back(I);
+									if (I.Dis(r) > CELL_LENGTH / 2) {
+										bottom.push_back(e); top.push_back(I);
+									}
 								}
 								else if (J.x != -1 && J.y != -1 && J.z != -1) {
-									bottom.push_back(e); top.push_back(J);
+									if (J.Dis(r) > CELL_LENGTH / 2) {
+										bottom.push_back(e); top.push_back(J);
+									}
 								}
 							}
 						}
@@ -346,10 +350,14 @@ void ofApp::nsGenCell() {
 								Pt I = geomMethods.intxPt(e, f, r, q);
 								Pt J = geomMethods.intxPt(e, f, p, q);
 								if (I.x != -1 && I.y != -1 && I.z != -1) {
-									bottom.push_back(I); top.push_back(e);
+									if (I.Dis(q) > CELL_LENGTH / 2) {
+										bottom.push_back(I); top.push_back(e);
+									}									
 								}
 								else if (J.x != -1 && J.y != -1 && J.z != -1) {
-									bottom.push_back(J); top.push_back(e);
+									if (J.Dis(q) > CELL_LENGTH / 2){
+										bottom.push_back(J); top.push_back(e);
+									}
 								}
 							}
 						}
@@ -366,10 +374,22 @@ void ofApp::nsGenCell() {
 				Pt p1 = bottom[k];
 				Pt p2 = top[k];
 				Pt p3 = top[k - 1];
-				cellvec.push_back(Cell(p0, p1, p2, p3, k, j, bottom.size()));
-			}
-			
-			
+				float angArr[4];
+				angArr[0] = geomMethods.computeAngle(p0, p1, p2);
+				angArr[1] = geomMethods.computeAngle(p1, p2, p3);
+				angArr[2] = geomMethods.computeAngle(p2, p3, p0);
+				angArr[3] = geomMethods.computeAngle(p3, p0, p1);
+				float minAngle = 1000;
+				for (int ite = 0; ite < 4; ite ++) {
+					if (angArr[ite] < minAngle) {
+						minAngle = angArr[ite];
+					}
+				}
+				//cout << "minAngle: "<< minAngle << ", " << PI/3 << endl;
+				Cell cell(p0, p1, p2, p3, k, j, bottom.size(), minAngle);
+				cell.setMinAngle(minAngle);			
+				cellvec.push_back(cell);
+			}		
 			vector<Pt>().swap(bottom);
 			vector<Pt>().swap(top);
 		}		
@@ -385,13 +405,16 @@ void ofApp::nsRules() {
 	//interact cells and display updated  form
 	for (int i = 0; i < blockvec.size(); i++) {
 		vector<Cell>::iterator itr = blockvec[i].cellvec.begin();
+
+		float req_angle = PI / 10;
 		while(itr != blockvec[i].cellvec.end()){
-			int J = (*itr).J; int num = (*itr).Num;
-			(*itr).CELL_FILL = 0; (*itr).CELL_HEIGHT = 0;
+			int J = (*itr).J; int num = (*itr).Num; float cellang = (*itr).CELL_ANGLE;
+			cout <<"check : "<< cellang << ", " << req_angle << endl;
+			(*itr).CELL_FILL = 0; (*itr).CELL_HEIGHT = 0; 
 			int ht, fill;
 			if (J < 2 || J > num - 2) {
 				int R = ofRandom(0, 10); 
-				if (R > 0) {
+				if (R > 0 && cellang>req_angle) {
 					fill = 1;
 				}
 				else {
@@ -400,7 +423,7 @@ void ofApp::nsRules() {
 			}
 			else {
 				int interior_hull = ofRandom(0, 10);
-				if (interior_hull > 5) {
+				if (interior_hull > 5 && cellang > req_angle) {
 					fill = 1;
 				}
 				else {
