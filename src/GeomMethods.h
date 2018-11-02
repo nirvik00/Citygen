@@ -25,6 +25,7 @@ public:
 	vector<Pt> genConvexHull(vector<Pt>); //convex hull
 	vector<Pt> offsetedHull(vector<Pt>, int);
 	
+
 	//utility functions
 	int orientationPts(Pt, Pt, Pt);
 	int ptInPoly(vector<Pt>, Pt);

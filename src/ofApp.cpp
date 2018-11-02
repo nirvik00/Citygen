@@ -49,6 +49,9 @@ void ofApp::nsInit() {
 	scaledHullPts = hullPts;
 	std::cout << "\t Hulls constructed...going to next step" << endl;
 	nsOccupy();
+	genCrvSkeleton();
+	nsGenCell();
+	nsRules();
 }
 
 void ofApp::nsOccupy() {
@@ -68,9 +71,7 @@ void ofApp::nsOccupy() {
 			}
 		}
 		vector<Pt>().swap(temp);
-		spinevec.push_back(Seg(spA, spB));
-		// make convex hull from quad segment points
-		
+		spinevec.push_back(Seg(spA, spB));		
 	}
 	std::cout << "\t Spine constructed" << endl;
 
@@ -123,10 +124,9 @@ void ofApp::nsOccupy() {
 		}
 		blockvec.push_back(Block(segvec, hullpts));
 	}
+	std::cout << "\t Segments constructed @ nsOccupy" << endl;
 
-
-
-	std::cout << "\t Bays constructed" << endl;
+	/*
 	for (int i = 0; i < blockvec.size(); i++) {
 		vector<Quad> qv;
 		vector<Seg>segvec = blockvec[i].seg;
@@ -139,39 +139,117 @@ void ofApp::nsOccupy() {
 		}
 		blockvec[i].setQuadVec(qv);
 	}
-	std::cout << "Objective complete at nsOCCUPY\nITERATION NUMBER= " << ITERATION << "\n\n\n" << endl;
-	nsGenCell();
+	*/
+
+	
+}
+
+void ofApp::genCrvSkeleton() {
+	for (int i = 0; i < blockvec.size(); i++) {
+		vector<Quad> qv;
+		vector<Pt>csSpine;
+		vector<Pt> Le; vector<Pt> Ri;
+		vector<Seg> seg = blockvec[i].seg;
+		if (seg.size() < 3) { continue; }
+		for (int j = 0; j < seg.size(); j++) {
+			Pt a = seg[j].a; Le.push_back(a);
+			Pt b = seg[j].b; Ri.push_back(b);
+			Pt c((a.x + b.x) / 2, (a.y + b.y) / 2, (a.z + b.z) / 2);
+			ofSetColor(0);
+			ofDrawSphere(c.x, c.y, c.z, 3);
+			csSpine.push_back(c);
+		}
+		vector<Seg>xseg; vector<Seg>fseg;
+		for (int j = 1; j < Le.size() - 1; j++) {
+			Pt a = Le[j - 1];
+			Pt b = Le[j];
+			Pt c = Le[j + 1];
+			Pt u((c.x - a.x) / a.Dis(c), (c.y - a.y) / a.Dis(c), (c.z - a.z) / a.Dis(c));
+			Pt v(-u.z, u.y, u.x); Pt w(u.z, u.y, -u.x);
+			float sc = 10000;
+			Pt p(b.x + v.x*sc, b.y + v.y*sc, b.z + v.z*sc);
+			Pt q(b.x + w.x*sc, b.y + w.y*sc, b.z + w.z*sc);
+			for (int k = 1; k < csSpine.size(); k++) {
+				Pt m, n;
+				m = csSpine[k - 1];
+				n = csSpine[k];
+				Pt I = geomMethods.intxPt(p, b, m, n);
+				Pt J = geomMethods.intxPt(q, b, m, n);
+				if (I.x != -1 && I.y != -1 && I.z != -1) {
+					xseg.push_back(Seg(b, I));
+				}
+				if (J.x != -1 && J.y != -1 && J.z != -1) {
+					xseg.push_back(Seg(b, J));
+				}
+			}
+		}
+		for (int j = 1; j < Ri.size() - 1; j++) {
+			Pt a = Ri[j - 1];
+			Pt b = Ri[j]; 
+			Pt c = Ri[j + 1];
+			Pt u((c.x - a.x) / a.Dis(c), (c.y - a.y) / a.Dis(c), (c.z - a.z) / a.Dis(c));
+			Pt v(-u.z, u.y, u.x); Pt w(u.z, u.y, -u.x);
+			float sc = 10000;
+			Pt p(b.x + v.x*sc, b.y + v.y*sc, b.z + v.z*sc);
+			Pt q(b.x + w.x*sc, b.y + w.y*sc, b.z + w.z*sc);
+			for (int k = 1; k < csSpine.size(); k++) {
+				Pt m, n;
+				m = csSpine[k - 1];
+				n = csSpine[k];
+				Pt I = geomMethods.intxPt(p, b, m, n);
+				Pt J = geomMethods.intxPt(q, b, m, n);
+				if (I.x != -1 && I.y != -1 && I.z != -1) {
+					xseg.push_back(Seg(b, I));
+				}
+				if (J.x != -1 && J.y != -1 && J.z != -1) {
+					xseg.push_back(Seg(b, J));
+				}
+			}
+		}
+		for (int j = 0; j < xseg.size(); j++) {
+			//xseg.a=point on hull; xseg.b= spine point; 
+			Pt a = xseg[j].a; Pt b = xseg[j].b;
+			float minD = BOARD_DIMENSION * 2; int sum = 0;
+			Pt m(-1, -1, -1); Pt n(-1, -1, -1);
+			//if this seg is cut by LONGER segment ignore it.
+			for (int k = 0; k < xseg.size(); k++) {
+				Pt p = xseg[k].a; Pt q = xseg[k].b;
+				if (a.Dis(b) < p.Dis(q)) { continue; }
+				Pt I = geomMethods.intxPt(a, b, p, q);
+				if (I.x != -1 && I.y != -1 && I.z != -1) {
+					float d = I.Dis(a);
+					if (d < minD && d>1) {
+						m = a; n = I; minD = d;
+						sum++;
+					}
+				}
+			}
+			if (sum == 0) {
+				fseg.push_back(Seg(a, b));
+			}
+			else {
+				xseg[j].a = m; xseg[j].b = n;
+				fseg.push_back(Seg(m, n));
+			}
+		}
+		for (int j = 1; j < fseg.size() - 1; j++) {
+			//fseg.a=point on hull; fseg.b= spine point; 
+			Pt a, b, c, d;
+			a = fseg[j - 1].a; b = fseg[j - 1].b;
+			d = fseg[j].a; c = fseg[j].b;
+			Pt I = geomMethods.intxPt(a, c, b, d);
+			if (I.x != -1 && I.y != -1 && I.z != -1) {
+				qv.push_back(Quad(a, b, c, d));
+			}
+		}
+		csSpine.clear(); vector<Pt>().swap(csSpine);
+		blockvec[i].setQuadVec(qv);
+	}
+	std::cout << "Objective complete at genCrvSkeleton\nITERATION NUMBER= " << ITERATION << "\n\n\n" << endl;
 }
 
 void ofApp::nsGenCell() {
-	//INTERPOLATION
-	/*
-	for (int i = 0; i < blockvec.size(); i++) {
-		vector<Quad>qvec = blockvec[i].blockquadvec;
-		vector<Cell>cellvec;
-		for (int j = 0; j < qvec.size(); j++) {
-			qvec[j].display();
-			vector<Pt>bottom; vector<Pt>top;
-			Pt p = qvec[j].p; Pt q = qvec[j].q; Pt r = qvec[j].r; Pt s = qvec[j].s;
-			int itr = 0;
-			for (float k = 0.f; k < 1.0; k += 0.3) {
-				Pt a(p.x + (q.x - p.x)*k, p.y + (q.y - p.y)*k, p.z + (q.z - p.z)*k);
-				Pt b(s.x + (r.x - s.x)*k, s.y + (r.y - s.y)*k, s.z + (r.z - s.z)*k);
-							//ofDrawLine(a.x, a.y, a.z, b.x, b.y, b.z);
-					bottom.push_back(a); top.push_back(b);
-				Pt p0, p1, p2, p3;
-				if (itr > 0) {
-					p0 = bottom[itr - 1]; p1 = bottom[itr]; p2 = top[itr]; p3 = top[itr - 1];
-					cellvec.push_back(Cell(p0, p1, p2, p3, itr, j, 10));
-				}
-				itr++;
-			}
-		}
-		blockvec[i].setCellVec(cellvec);
-	}
-	
-	*/
-	
+		
 	//FOCUS ON ORTHO INTERIOR
 	for (int i = 0; i < blockvec.size(); i++) {
 		vector<Cell>cellvec;
@@ -352,7 +430,7 @@ void ofApp::draw(){
 		vector<Cell> cellvec = blockvec[i].cellvec;
 		vector<Quad> quads = blockvec[i].blockquadvec;
 		for (int j = 0; j < quads.size(); j++) {
-			//quads[j].display();
+			quads[j].display();
 		}
 		for (int j = 0; j < cellvec.size(); j++) {
 			//cellvec[j].display();
@@ -360,158 +438,7 @@ void ofApp::draw(){
 			//cellvec[j].display3(); //plot diagonals
 		}
 	}
-
-
-
-
-
-
-
-
-	ofSetLineWidth(1);
 	
-	for (int i = 0; i < blockvec.size(); i++) {
-		vector<Pt>csSpine; 
-		vector<Pt> Le; vector<Pt> Ri;
-		vector<Seg> seg = blockvec[i].seg;
-		if (seg.size() < 3) { continue; }
-		for (int j = 0; j < seg.size(); j++) {
-			Pt a = seg[j].a; Le.push_back(a);
-			Pt b = seg[j].b; Ri.push_back(b);
-			Pt c((a.x + b.x) / 2, (a.y + b.y) / 2, (a.z + b.z) / 2);
-			ofSetColor(0);
-			ofDrawSphere(c.x, c.y, c.z, 3);
-			csSpine.push_back(c);
-		}
-		vector<Seg>xseg; vector<Seg>fseg;
-		for (int j = 1; j < Le.size() - 1; j++) {
-			Pt a = Le[j - 1];
-			Pt b = Le[j]; ofDrawSphere(b.x, b.y, b.z, 2);
-			Pt c = Le[j + 1];
-			Pt u((c.x - a.x) / a.Dis(c), (c.y - a.y) / a.Dis(c), (c.z - a.z) / a.Dis(c));
-			Pt v(-u.z, u.y, u.x); Pt w(u.z, u.y, -u.x);
-			float sc = 10000;
-			Pt p(b.x + v.x*sc, b.y + v.y*sc, b.z + v.z*sc);
-			Pt q(b.x + w.x*sc, b.y + w.y*sc, b.z + w.z*sc);
-			for (int k = 1; k < csSpine.size(); k++) {
-				Pt m,n;
-				m = csSpine[k - 1];
-				n = csSpine[k];
-				Pt I = geomMethods.intxPt(p, b, m, n);
-				Pt J = geomMethods.intxPt(q, b, m, n);
-				if (I.x != -1 && I.y != -1 && I.z != -1) { 
-					//ofSetLineWidth(1);
-					//ofDrawLine(b.x, b.y, b.z, I.x, I.y, I.z);
-					//ofSetColor(0, 0, 0, 50);
-					xseg.push_back(Seg(b,I)); 
-				}
-				if (J.x != -1 && J.y != -1 && J.z != -1) { 
-					//ofSetLineWidth(1);
-					//ofSetColor(0, 0, 0, 50);
-					//ofDrawLine(b.x, b.y, b.z, J.x, J.y, J.z);
-					xseg.push_back(Seg(b,J)); 
-				}
-			}
-		}
-		for (int j = 1; j < Ri.size() - 1; j++) {
-			Pt a = Ri[j - 1];
-			Pt b = Ri[j]; ofDrawSphere(b.x, b.y, b.z, 2);
-			Pt c = Ri[j + 1];
-			Pt u((c.x - a.x) / a.Dis(c), (c.y - a.y) / a.Dis(c), (c.z - a.z) / a.Dis(c));
-			Pt v(-u.z, u.y, u.x); Pt w(u.z, u.y, -u.x);
-			float sc = 10000;
-			Pt p(b.x + v.x*sc, b.y + v.y*sc, b.z + v.z*sc);
-			Pt q(b.x + w.x*sc, b.y + w.y*sc, b.z + w.z*sc);
-			for (int k = 1; k < csSpine.size(); k++) {
-				Pt m, n;
-				m = csSpine[k - 1];
-				n = csSpine[k];
-				Pt I = geomMethods.intxPt(p, b, m, n);
-				Pt J = geomMethods.intxPt(q, b, m, n);
-				if (I.x != -1 && I.y != -1 && I.z != -1) {
-					//ofSetLineWidth(1);
-					//ofSetColor(0, 0, 0, 50);
-					//ofDrawLine(b.x, b.y, b.z, I.x, I.y, I.z);
-					xseg.push_back(Seg(b, I));
-				}
-				if (J.x != -1 && J.y != -1 && J.z != -1) {
-					//ofSetLineWidth(1);
-					//ofSetColor(0, 0, 0, 50);
-					//ofDrawLine(b.x, b.y, b.z, J.x, J.y, J.z);
-					xseg.push_back(Seg(b, J));
-				}
-			}
-		}
-		for (int j = 0; j < xseg.size(); j++) {
-			//xseg.a=point on hull; xseg.b= spine point; 
-			Pt a = xseg[j].a; Pt b = xseg[j].b;
-			float minD = BOARD_DIMENSION * 2; int sum = 0;
-			Pt m(-1, -1, -1); Pt n(-1, -1, -1); 
-			//if this seg is cut by LONGER segment ignore it.
-			for (int k = 0; k < xseg.size(); k++) {
-				Pt p = xseg[k].a; Pt q = xseg[k].b;
-				if (a.Dis(b) < p.Dis(q)) { continue; }
-				Pt I = geomMethods.intxPt(a, b, p, q);
-				if (I.x != -1 && I.y != -1 && I.z != -1) {
-					//ofSetColor(0, 0, 255);
-					//ofDrawSphere(I.x, I.y, I.z, 1);
-					float d = I.Dis(a);
-					if (d < minD && d>1) {
-						m = a; n = I; minD = d;
-						sum++;
-					}
-				}
-			}
-			if (sum == 0) {
-				fseg.push_back(Seg(a, b));
-			}
-			else {
-				xseg[j].a = m; xseg[j].b = n;
-				fseg.push_back(Seg(m, n));
-			}
-		}
-		for (int j = 1; j < fseg.size()-1; j++) {
-			//fseg.a=point on hull; fseg.b= spine point; 
-			Pt a, b, c, d;
-			ofSetLineWidth(1);
-			ofSetColor(0, 0, 0, 50);
-			ofDrawLine(a.x, a.y, a.z, b.x, b.y, b.z);
-			a = fseg[j-1].a; b = fseg[j-1].b;
-			d = fseg[j].a; c = fseg[j].b;
-			Pt I = geomMethods.intxPt(a, c, b, d);
-			if (I.x != -1 && I.y != -1 && I.z != -1) {
-				ofSetLineWidth(1);
-				ofSetColor(255, 0, 0);
-				ofDrawLine(a.x, a.y, a.z, b.x, b.y, b.z);
-				ofDrawLine(b.x, b.y, b.z, c.x, c.y, c.z);
-				ofDrawLine(c.x, c.y, c.z, d.x, d.y, d.z);
-				ofDrawLine(d.x, d.y, d.z, a.x, a.y, a.z);
-			}			
-		}
-		csSpine.clear();
-	}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-		
 	ofSetLineWidth(1);
 	cam.end();
 }

@@ -47,6 +47,9 @@ struct Quad {
 		A = a; B = b;
 		p = A.a; q = A.b; r = B.b; s = B.a;
 	}
+	Quad(Pt a, Pt b, Pt c, Pt d) {
+		p = a; q = b; r = c; s = d;
+	}
 	void display() {
 		ofSetLineWidth(1);
 		ofSetColor(0, 0, 0, 50);
@@ -202,16 +205,22 @@ public:
 
 class ofApp : public ofBaseApp {
 public:
+	// NS METHODS
 	void nsInit();
 	void nsOccupy();
 	void nsGenCell();
 	void nsRules();
+	//curve skeleton
+	void genCrvSkeleton(); //generate curve skeleton from block attributes:1.segments 2.hull
 
+	// OF METHODS
 	void setup();
 	void update();
 	void draw();
 
 	void keyPressed(int key);
+
+	// UNUSED OF METHODS
 	void keyReleased(int key);
 	void mouseMoved(int x, int y);
 	void mouseDragged(int x, int y, int button);
