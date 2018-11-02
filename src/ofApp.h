@@ -11,10 +11,14 @@ using namespace std;
 
 struct Colr {
 	int re, gr, bl;
+	Colr() {}
 	Colr(int a, int b, int c) {
 		re = a;
 		gr = b;
 		bl = c;
+	}
+	void display() {
+		std::cout << "--- Color check : " << re << ", " << gr << ", " << bl << endl;
 	}
 };
 
@@ -75,12 +79,13 @@ private:
 	//int FILL, HEIGHT;
 
 public:
+	Colr colr;
 	Pt p, q, r, s;
 	int CELL_FILL = 0, CELL_HEIGHT = 0.0;
 	float CELL_ANGLE=0;
 	int I, J, Num;		
 	Cell() {}
-	Cell(Pt a, Pt b, Pt c, Pt d, int j, int i, int n, float cellangle) {
+	Cell(Pt a, Pt b, Pt c, Pt d, int j, int i, int n, float cellangle, Colr cl) {
 		p = a; q = b; r = c; s = d;
 		I = i; J = j; Num = n;
 		CELL_ANGLE = cellangle;
@@ -158,7 +163,7 @@ public:
 					//ofDrawLine(p0, q0); ofDrawLine(q0, r0); ofDrawLine(r0, s0); ofDrawLine(s0, p0);//bottom horizontal
 				}
 				mesh.setupIndicesAuto();
-				ofSetColor(150, 150, 150);
+				ofSetColor(colr.re, colr.gr, colr.bl);
 				mesh.draw();
 			}	
 		}
@@ -172,7 +177,7 @@ public:
 			mesh.addVertex(p0); mesh.addVertex(q0); mesh.addVertex(r0);
 			mesh.addVertex(p0); mesh.addVertex(s0); mesh.addVertex(r0);
 			mesh.setupIndicesAuto();
-			ofSetColor(150, 255, 150);
+			ofSetColor(colr.re, colr.gr, colr.bl);
 			mesh.draw();
 		}
 	}
@@ -204,13 +209,15 @@ public:
 
 struct Block {
 public:
+	Colr colr;
 	vector<Seg> seg;
 	vector<Pt> hullpts;
 	vector<Quad> blockquadvec;
 	vector<Cell> cellvec;
 	vector<vector<Cell>> rowcellvec; //vector of cells in a row
-	Block(vector<Seg> s, vector<Pt>p_) {
-		seg = s; hullpts = p_;
+	float areaOccupied;
+	Block(vector<Seg> s, vector<Pt>p_, Colr cl) {
+		seg = s; hullpts = p_; colr = cl;
 	}
 	void setQuadVec(vector<Quad> quads) {
 		blockquadvec.clear();
@@ -232,7 +239,9 @@ public:
 	void nsGenCell();
 	void nsRules();
 	//curve skeleton
-	void genCrvSkeleton(); //generate curve skeleton from block attributes:1.segments 2.hull
+	void nsgenCrvSkeleton(); //generate curve skeleton from block attributes:1.segments 2.hull
+	float nscomputeArea();
+
 
 	// OF METHODS
 	void setup();
@@ -281,5 +290,6 @@ public:
 	float BAY_DEPTH = 50;
 	float MIN_CELL_ANGLE = PI/10;
 	GeomMethods geomMethods;
+	float REQ_FAR = 2.5;
 	
 };

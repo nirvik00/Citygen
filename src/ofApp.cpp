@@ -29,6 +29,7 @@ void ofApp::nsInit() {
 		int gr = (int)ofRandom(0, 255);
 		int bl = (int)ofRandom(0, 255);
 		Colr col(re, gr, bl);
+		col.display();
 		colorVec.push_back(col);
 	}
 		
@@ -39,19 +40,14 @@ void ofApp::nsInit() {
 	
 	hullPts = geomMethods.initConvexHull(sitePtVec, gridPtVec);
 	std::cout << "\t REGIONS constructed...going to next step" << endl;
-	for (int i = 0; i < hullPts.size(); i++) {
-		vector<Pt>temp2 = geomMethods.offsetedHull(hullPts[i], SCALE_HULL);
-		secHullPts.push_back(temp2);
-		cout << "hullsize= " << secHullPts.size() << endl;
-	}
-	
 
 	scaledHullPts = hullPts;
 	std::cout << "\t Hulls constructed...going to next step" << endl;
 	nsOccupy();
-	genCrvSkeleton();
+	nsgenCrvSkeleton();
 	nsGenCell();
 	nsRules();
+	nscomputeArea();
 }
 
 void ofApp::nsOccupy() {
@@ -75,7 +71,6 @@ void ofApp::nsOccupy() {
 	}
 	std::cout << "\t Spine constructed" << endl;
 
-	
 	for (int i = 0; i < spinevec.size(); i++) {
 		vector<Seg>segvec; vector<Seg> segvecL; vector<Seg> segvecR;
 		vector<Pt>hullpts = scaledHullPts[i];
@@ -122,29 +117,12 @@ void ofApp::nsOccupy() {
 			else if (T0 == 0 && T1 == 1) { segvec.push_back(Seg(p,J)); }
 			else if (T0 == 1 && T1 == 0) { segvec.push_back(Seg(I, p)); }
 		}
-		blockvec.push_back(Block(segvec, hullpts));
+		blockvec.push_back(Block(segvec, hullpts, colorVec[i]));
 	}
 	std::cout << "\t Segments constructed @ nsOccupy" << endl;
-
-	/*
-	for (int i = 0; i < blockvec.size(); i++) {
-		vector<Quad> qv;
-		vector<Seg>segvec = blockvec[i].seg;
-		for (int j = 1; j < segvec.size(); j++) {
-			Seg s0, s1;
-			s0 = segvec[j - 1];
-			s1 = segvec[j];
-			Quad quad(s0, s1);
-			qv.push_back(quad);
-		}
-		blockvec[i].setQuadVec(qv);
-	}
-	*/
-
-	
 }
 
-void ofApp::genCrvSkeleton() {
+void ofApp::nsgenCrvSkeleton() {
 	for (int i = 0; i < blockvec.size(); i++) {
 		vector<Quad> qv;
 		vector<Pt>csSpine;
@@ -389,12 +367,17 @@ void ofApp::nsGenCell() {
 				float d1 = p0.Dis(p3); 
 				float d2 = p1.Dis(p2);
 				float d3 = p2.Dis(p3);
+				float d4 = p0.Dis(p2);
+				float d5 = p1.Dis(p3);
 				int o0 = (d0 > 0.35*CELL_LENGTH && d0 < 3 * CELL_LENGTH);
 				int o1 = (d1 > 0.35*CELL_LENGTH && d1 < 3 * CELL_LENGTH);
 				int o2 = (d2 > 0.35*CELL_LENGTH && d2 < 3 * CELL_LENGTH);
 				int o3 = (d3 > 0.35*CELL_LENGTH && d3 < 3 * CELL_LENGTH);
-				if (o1 == 1 && o1 == 1 && o2 == 1 && o3 == 1 && minAngle>MIN_CELL_ANGLE) {
-					Cell cell(p0, p1, p2, p3, k, j, bottom.size(), minAngle);
+				int o4 = (d4 > 0.35*CELL_LENGTH && d4 < 3 * CELL_LENGTH);
+				int o5 = (d5 > 0.35*CELL_LENGTH && d5 < 3 * CELL_LENGTH);
+				if (o1 == 1 && o1 == 1 && o2 == 1 && o3 == 1 && o4==1 && o5==1 && minAngle>MIN_CELL_ANGLE) {
+					
+					Cell cell(p0, p1, p2, p3, k, j, bottom.size(), minAngle, colorVec[i]);
 					cell.setMinAngle(minAngle);
 					cellvec.push_back(cell);
 				}			
@@ -402,6 +385,7 @@ void ofApp::nsGenCell() {
 			vector<Pt>().swap(bottom);
 			vector<Pt>().swap(top);
 		}		
+		colorVec[i].display();
 		blockvec[i].setCellVec(cellvec);
 		vector<Cell>().swap(cellvec);
 	}
@@ -473,7 +457,38 @@ void ofApp::nsRules() {
 	/* post process cells - merging */
 }
 
-
+float ofApp::nscomputeArea() {
+	std::cout << "\n\n========================" << endl;
+	std::cout << "\n\n\tAREA OCCUPIED" << endl;
+	std::cout << "\n\n========================" << endl;
+	vector<float> blockcellarea;
+	float totalAreaOccupied=0;
+	for (int i = 0; i < blockvec.size(); i++) {
+		std::vector<Cell>cellvec = blockvec[i].cellvec;
+		float sum_cells=0;
+		for (int j = 0; j < cellvec.size(); j++) {
+			Cell cell = cellvec[j];
+			Pt p = cell.p; Pt q = cell.q; Pt r = cell.r; Pt s = cell.s;
+			//2 triangles p,q,r + p,r,s
+			float a1 = p.Dis(q), b1 = q.Dis(r), c1 = p.Dis(r);
+			float a2 = p.Dis(r), b2 = r.Dis(s), c2 = p.Dis(s);
+			float s1 = (a1 + b1 + c1) / 2; 
+			float s2 = (a2 + b2 + c2) / 2;
+			float ar1 = sqrt((s1 - a1)*(s1 - b1)*(s1 - c1));
+			float ar2 = sqrt((s2 - a2)*(s2 - b2)*(s2 - c2));
+			sum_cells += (ar1 + ar2)*cell.CELL_HEIGHT;
+			totalAreaOccupied+= (ar1 + ar2)*cell.CELL_HEIGHT;
+		}
+		std::cout << "area occupied by block: <" << i << "> = " << sum_cells << endl;
+		blockcellarea.push_back(sum_cells);
+	}
+	float site_area = BOARD_DIMENSION * BOARD_DIMENSION;
+	float fsr = totalAreaOccupied / site_area;
+	std::cout << "\nTotal area occupied by cells: " << totalAreaOccupied << endl;
+	std::cout << "Total Area of region = " << site_area << endl;
+	std::cout << "FSR achieved = " << fsr << endl;
+	return fsr;
+}
 
 
 /* frameworks */
@@ -550,6 +565,8 @@ void ofApp::draw(){
 	
 	ofSetLineWidth(1);
 	cam.end();
+	ofDrawBitmapStringHighlight("Press 'r' or 'R' to reconfigure organization\nPress 'i' or 'I' to reconfigure buildings", 10, 20);
+	ofDrawBitmapStringHighlight("student: Nirvik Saha\nadviser: Dennis R Shelden, John R Haymaker", 10, ofGetWindowHeight() - 20);
 }
 
 void ofApp::keyPressed(int key) {
