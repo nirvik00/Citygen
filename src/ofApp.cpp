@@ -317,7 +317,8 @@ void ofApp::nsGenCell() {
 								bottom.push_back(e); top.push_back(f);
 							}
 							else {//handle the intersection -> proj can be above then this dcase is wrong
-								Pt I = geomMethods.intxPtExtension(e, f, r, s);
+								//intersection with the joiing edge from r-q NOT r-s
+								Pt I = geomMethods.intxPt(e, f, r, q);
 								if (I.x != -1 && I.y != -1 && I.z != -1) {
 									bottom.push_back(e); top.push_back(I);
 								}
@@ -335,7 +336,8 @@ void ofApp::nsGenCell() {
 								bottom.push_back(f); top.push_back(e);
 							}
 							else {//handle the intersection -> proj can be above then this dcase is wrong
-								Pt I = geomMethods.intxPtExtension(e, f, p, q);
+								//intersection with the joiing edge from p-q NOT r-q
+								Pt I = geomMethods.intxPt(e, f, r, q);
 								if (I.x != -1 && I.y != -1 && I.z != -1) {
 									bottom.push_back(I); top.push_back(e);
 								}
