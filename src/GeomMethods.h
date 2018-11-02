@@ -23,6 +23,7 @@ public:
 	//convexhull
 	vector<vector<Pt>> initConvexHull(vector<Pt>, vector<Pt>); //initialize and set up convex hull	
 	vector<Pt> genConvexHull(vector<Pt>); //convex hull
+	vector<Pt> offsetedHull(vector<Pt>, int);
 	
 	//utility functions
 	int orientationPts(Pt, Pt, Pt);

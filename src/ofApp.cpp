@@ -9,7 +9,7 @@ void ofApp::nsInit() {
 	sitePtVec.clear();
 	gridPtVec.clear();
 	hullPts.clear();
-	scaleHullPts.clear();
+	scaledHullPts.clear();
 	spinevec.clear();
 	blockvec.clear();
 	intHullPts.clear();
@@ -18,7 +18,7 @@ void ofApp::nsInit() {
 	vector<Pt>().swap(sitePtVec);
 	vector<Pt>().swap(gridPtVec);
 	vector<vector<Pt>>().swap(hullPts);
-	vector<vector<Pt>>().swap(scaleHullPts);
+	vector<vector<Pt>>().swap(scaledHullPts);
 	vector<Seg>().swap(spinevec);
 	vector<Block>().swap(blockvec);
 	vector<vector<Pt>>().swap(intHullPts);
@@ -39,16 +39,23 @@ void ofApp::nsInit() {
 	
 	hullPts = geomMethods.initConvexHull(sitePtVec, gridPtVec);
 	std::cout << "\t REGIONS constructed...going to next step" << endl;
+	for (int i = 0; i < hullPts.size(); i++) {
+		vector<Pt>temp2 = geomMethods.offsetedHull(hullPts[i], SCALE_HULL);
+		secHullPts.push_back(temp2);
+		cout << "hullsize= " << secHullPts.size() << endl;
+	}
+	
 
-	scaleHullPts = hullPts;
+	scaledHullPts = hullPts;
 	std::cout << "\t Hulls constructed...going to next step" << endl;
 	nsOccupy();
 }
 
 void ofApp::nsOccupy() {
+	vector<vector<Pt>>().swap(secHullPts);
 	std::cout << "2/2-> Command received at nsOCCUPY...2 objectives here " << endl;
-	for (int i = 0; i < scaleHullPts.size(); i++) {
-		vector<Pt> temp = scaleHullPts[i];
+	for (int i = 0; i < scaledHullPts.size(); i++) {
+		vector<Pt> temp = scaledHullPts[i];
 		Pt spA, spB; float maxD = -1;
 		for (int j = 0; j < temp.size(); j++) {
 			for (int k = 0; k < temp.size(); k++) {
@@ -60,12 +67,17 @@ void ofApp::nsOccupy() {
 				}
 			}
 		}
+		vector<Pt>().swap(temp);
 		spinevec.push_back(Seg(spA, spB));
+		// make convex hull from quad segment points
+		
 	}
 	std::cout << "\t Spine constructed" << endl;
+
+	
 	for (int i = 0; i < spinevec.size(); i++) {
 		vector<Seg>segvec; vector<Seg> segvecL; vector<Seg> segvecR;
-		vector<Pt>hullpts = scaleHullPts[i];
+		vector<Pt>hullpts = scaledHullPts[i];
 
 		Pt A = spinevec[i].a; Pt B = spinevec[i].b;
 
@@ -105,12 +117,15 @@ void ofApp::nsOccupy() {
 			int T0 = (I.x != -1 && I.y != -1 && I.z != -1 && I.Dis(p) > SPINE_DEPTH);
 			int T1 = (J.x != -1 && J.y != -1 && J.z != -1 && J.Dis(p) > SPINE_DEPTH);
 
-			if (T0 == 1 && T1 == 1) { segvec.push_back(Seg(I, J)); }
+			if (T0 == 1 && T1 == 1) { segvec.push_back(Seg(I, J));  }
 			else if (T0 == 0 && T1 == 1) { segvec.push_back(Seg(p, J)); }
 			else if (T0 == 1 && T1 == 0) { segvec.push_back(Seg(I, p)); }
 		}
 		blockvec.push_back(Block(segvec, hullpts));
 	}
+
+
+
 	std::cout << "\t Bays constructed" << endl;
 	for (int i = 0; i < blockvec.size(); i++) {
 		vector<Quad> qv;
@@ -129,8 +144,8 @@ void ofApp::nsOccupy() {
 }
 
 void ofApp::nsGenCell() {
-	/*
 	//INTERPOLATION
+	/*
 	for (int i = 0; i < blockvec.size(); i++) {
 		vector<Quad>qvec = blockvec[i].blockquadvec;
 		vector<Cell>cellvec;
@@ -139,10 +154,10 @@ void ofApp::nsGenCell() {
 			vector<Pt>bottom; vector<Pt>top;
 			Pt p = qvec[j].p; Pt q = qvec[j].q; Pt r = qvec[j].r; Pt s = qvec[j].s;
 			int itr = 0;
-			for (float k = 0.f; k < 1.0; k += 0.1) {
+			for (float k = 0.f; k < 1.0; k += 0.3) {
 				Pt a(p.x + (q.x - p.x)*k, p.y + (q.y - p.y)*k, p.z + (q.z - p.z)*k);
 				Pt b(s.x + (r.x - s.x)*k, s.y + (r.y - s.y)*k, s.z + (r.z - s.z)*k);
-								//ofDrawLine(a.x, a.y, a.z, b.x, b.y, b.z);
+							//ofDrawLine(a.x, a.y, a.z, b.x, b.y, b.z);
 					bottom.push_back(a); top.push_back(b);
 				Pt p0, p1, p2, p3;
 				if (itr > 0) {
@@ -154,6 +169,7 @@ void ofApp::nsGenCell() {
 		}
 		blockvec[i].setCellVec(cellvec);
 	}
+	
 	*/
 	
 	//FOCUS ON ORTHO INTERIOR
@@ -205,6 +221,7 @@ void ofApp::nsGenCell() {
 		blockvec[i].setCellVec(cellvec);
 		vector<Cell>().swap(cellvec);
 	}
+	
 	std::cout << "Objective complete at nsGENCELL" << endl;
 	nsRules();
 }
@@ -311,8 +328,8 @@ void ofApp::draw(){
 		}
 	}
 
-	for (int i = 0; i < scaleHullPts.size(); i++) {
-		vector<Pt> hull = scaleHullPts[i];
+	for (int i = 0; i < scaledHullPts.size(); i++) {
+		vector<Pt> hull = scaledHullPts[i];
 		for (int j = 0; j < hull.size(); j++) {
 			Pt a, b;
 			if (j == 0) {
@@ -334,16 +351,115 @@ void ofApp::draw(){
 	for (int i = 0; i < blockvec.size(); i++) {
 		vector<Cell> cellvec = blockvec[i].cellvec;
 		vector<Quad> quads = blockvec[i].blockquadvec;
-		//for (int j = 0; j < quads.size(); j++) {
+		for (int j = 0; j < quads.size(); j++) {
 			//quads[j].display();
-		//}
+		}
 		for (int j = 0; j < cellvec.size(); j++) {
 			//cellvec[j].display();
-			cellvec[j].display2();//discrete cells unmerged MESH
+			//cellvec[j].display2();//discrete cells unmerged MESH
 			//cellvec[j].display3(); //plot diagonals
 		}
 	}
 
+
+
+
+
+
+
+
+	
+	for (int i = 0; i < blockvec.size(); i++) {
+		vector<Pt>csSpine; 
+		vector<Pt> Le; vector<Pt> Ri;
+		vector<Seg> seg = blockvec[i].seg;
+		if (seg.size() < 3) { continue; }
+		for (int j = 0; j < seg.size(); j++) {
+			Pt a = seg[j].a; Le.push_back(a);
+			Pt b = seg[j].b; Ri.push_back(b);
+			Pt c((a.x + b.x) / 2, (a.y + b.y) / 2, (a.z + b.z) / 2);
+			ofDrawSphere(c.x, c.y, c.z, 10);
+			csSpine.push_back(c);
+		}
+		vector<Seg>xseg;
+		for (int j = 1; j < Le.size() - 1; j++) {
+			Pt a = Le[j - 1];
+			Pt b = Le[j]; ofDrawSphere(b.x, b.y, b.z, 10);
+			Pt c = Le[j + 1];
+			Pt u((c.x - a.x) / a.Dis(c), (c.y - a.y) / a.Dis(c), (c.z - a.z) / a.Dis(c));
+			Pt v(-u.z, u.y, u.x); Pt w(u.z, u.y, -u.x);
+			float sc = 10000;
+			Pt p(b.x + v.x*sc, b.y + v.y*sc, b.z + v.z*sc);
+			Pt q(b.x + w.x*sc, b.y + w.y*sc, b.z + w.z*sc);
+			for (int k = 1; k < csSpine.size(); k++) {
+				Pt m,n;
+				m = csSpine[k - 1];
+				n = csSpine[k];
+				Pt I = geomMethods.intxPt(p, b, m, n);
+				Pt J = geomMethods.intxPt(q, b, m, n);
+				if (I.x != -1 && I.y != -1 && I.z != -1) { 
+					ofDrawSphere(I.x, I.y, I.z, 10);
+					ofDrawLine(I.x, I.y, I.z, b.x, b.y, b.z);
+					xseg.push_back(Seg(b,I)); 
+				}
+				if (J.x != -1 && J.y != -1 && J.z != -1) { 
+					ofDrawSphere(J.x, J.y, J.z, 10);
+					ofDrawLine(J.x, J.y, J.z, b.x, b.y, b.z);
+					xseg.push_back(Seg(b,J)); 
+				}
+			}
+		}
+		for (int j = 1; j < Ri.size() - 1; j++) {
+			Pt a = Ri[j - 1];
+			Pt b = Ri[j]; ofDrawSphere(b.x, b.y, b.z, 10);
+			Pt c = Ri[j + 1];
+			Pt u((c.x - a.x) / a.Dis(c), (c.y - a.y) / a.Dis(c), (c.z - a.z) / a.Dis(c));
+			Pt v(-u.z, u.y, u.x); Pt w(u.z, u.y, -u.x);
+			float sc = 10000;
+			Pt p(b.x + v.x*sc, b.y + v.y*sc, b.z + v.z*sc);
+			Pt q(b.x + w.x*sc, b.y + w.y*sc, b.z + w.z*sc);
+			for (int k = 1; k < csSpine.size(); k++) {
+				Pt m, n;
+				m = csSpine[k - 1];
+				n = csSpine[k];
+				Pt I = geomMethods.intxPt(p, b, m, n);
+				Pt J = geomMethods.intxPt(q, b, m, n);
+				if (I.x != -1 && I.y != -1 && I.z != -1) {
+					ofDrawSphere(I.x, I.y, I.z, 10);
+					ofDrawLine(I.x, I.y, I.z, b.x, b.y, b.z);
+					xseg.push_back(Seg(b, I));
+				}
+				if (J.x != -1 && J.y != -1 && J.z != -1) {
+					ofDrawSphere(J.x, J.y, J.z, 10);
+					ofDrawLine(J.x, J.y, J.z, b.x, b.y, b.z);
+					xseg.push_back(Seg(b, J));
+				}
+			}
+		}
+		csSpine.clear();
+	}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+		
 	ofSetLineWidth(1);
 	cam.end();
 }

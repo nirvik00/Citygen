@@ -132,6 +132,64 @@ vector<Pt> GeomMethods::genConvexHull(vector<Pt> pts) {
 }
 
 
+vector<Pt> GeomMethods::offsetedHull(vector<Pt> pts, int spinedepth) {
+	//distance to distribute number of points on segemnts
+	float N = 0.1; // if dis<spine_depth
+	float E = 0.05; // if dis > spine_depth
+	//1. distribute equidistant points on the hull 
+	vector<Pt> dpts;
+	for (int i = 0; i < pts.size(); i++) {
+		Pt a, b;
+		if (i == 0) {
+			a = pts[pts.size() - 1];
+			b = pts[0];
+		}
+		else {
+			a = pts[i];
+			b = pts[i - 1];
+		}
+		Pt u((b.x - a.x), (b.y - a.y), (b.z - a.z));
+		if (a.Dis(b) < spinedepth) {
+			for (float j = 0.f; j < 1.0f; j += N) {
+				Pt p(a.x + j * u.x, a.y + j * u.y, a.z + j * u.z);
+				dpts.push_back(p);
+			}
+		}
+		else {
+			for (float j = 0.f; j < 1.0f; j += E) {
+				Pt p(a.x + j * u.x, a.y + j * u.y, a.z + j * u.z);
+				dpts.push_back(p);
+			}
+		}		
+	}
+	//2. fidn the appropriate point at a distance, normal and scale the normal
+	vector<Pt>fpts;
+	for (int i = 0; i < dpts.size(); i++) {
+		Pt a, b;
+		if (i == 0) {
+			a = dpts[dpts.size() - 1];
+			b = dpts[0];
+		}
+		else {
+			a = dpts[i];
+			b = dpts[i-1];
+		}
+		if (a.Dis(b) > 50) {
+			Pt c((a.x + b.x) / 2, (a.y + b.y) / 2, (a.z + b.z) / 2);
+			Pt u((b.x - a.x) / a.Dis(b), (b.y - a.y) / a.Dis(b), (b.z - a.z) / a.Dis(b));
+			Pt v(-u.z, u.y, u.x); Pt w(u.z, u.y, -u.x);
+			float sc = 20;
+			int o1 = ptInPoly(pts, v);
+			Pt p;
+			if (o1 == true) { p=Pt(c.x + v.x * sc, c.y + v.y * sc, c.z + v.z*sc); }
+			else{ p = Pt(c.x + w.x * sc, c.y + w.y * sc, c.z + w.z*sc); }
+			fpts.push_back(p);
+		}		
+	}
+	//vector<Pt>().swap(dpts);
+	return fpts;
+}
+
 // utility
 int GeomMethods::ptInPoly(vector<Pt> pts, Pt P) {
 	Pt extreme(P.x + 100000, P.y, P.z);

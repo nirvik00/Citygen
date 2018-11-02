@@ -230,9 +230,13 @@ public:
 	vector<Pt> sitePtVec;
 	vector<Pt> gridPtVec;
 	vector<vector<Pt>> hullPts;
-	vector<vector<Pt>> scaleHullPts;
+	vector<vector<Pt>> scaledHullPts;
 	vector<vector<Pt>> intHullPts;
 	vector<vector<Pt>> splinePts;
+	
+
+
+	vector<vector<Pt>> secHullPts;
 
 	vector<Seg> spinevec;
 	vector<Block> blockvec;

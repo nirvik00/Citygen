@@ -41,9 +41,6 @@
       <Filter>src</Filter>
     </ClCompile>
     <ClCompile Include="src\GeomMethods.cpp" />
-    <ClCompile Include="src\RegionMethods.cpp">
-      <Filter>src</Filter>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="src">
@@ -100,9 +97,6 @@
       <Filter>src</Filter>
     </ClInclude>
     <ClInclude Include="src\GeomMethods.h" />
-    <ClInclude Include="src\RegionMethods.h">
-      <Filter>src</Filter>
-    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="icon.rc" />
