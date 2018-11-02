@@ -51,8 +51,9 @@ struct Quad {
 		p = a; q = b; r = c; s = d;
 	}
 	void display() {
-		ofSetLineWidth(1);
-		ofSetColor(0, 0, 0, 50);
+		ofSetLineWidth(3);
+		ofSetColor(255, 0, 0);
+		p.y = -5; q.y = -5; r.y = -5, s.y = -5;
 		ofDrawLine(p.x, p.y, p.z, q.x, q.y, q.z);
 		ofDrawLine(q.x, q.y, q.z, r.x, r.y, r.z);
 		ofDrawLine(r.x, r.y, r.z, s.x, s.y, s.z);
@@ -160,6 +161,10 @@ public:
 		}
 	}
 	void display3() {
+		p.y = -10;
+		q.y = -10;
+		r.y = -10;
+		s.y = -10;
 		if (J < 3) {
 			ofSetLineWidth(1);
 			ofSetColor(255, 0, 0);
@@ -250,14 +255,14 @@ public:
 	vector<Block> blockvec;
 	
 	int ITERATION = 0;
-	// ratio of BOARD_DIMENSION : NUM_SITES = 500 : 5; 
-	int BOARD_DIMENSION = 1500;
-	int NUM_SITES = 45;
+	// ratio of BOARD_DIMENSION : NUM_SITES = 500 : 5; 1500 : 45
+	int BOARD_DIMENSION = 700;
+	int NUM_SITES = 20;
 	int CELL_LE = BOARD_DIMENSION / 100;
 	int CELL_WI = BOARD_DIMENSION / 100;
-	int SCALE_HULL = 10; //20 // max(10, (int)NUM_SITES / 15);
-	float SPINE_DEPTH = 50;
-	float BAY_DEPTH = 50;
+	int SCALE_HULL = 1; //20 // max(10, (int)NUM_SITES / 15);
+	float CELL_LENGTH = 35;
+	float BAY_DEPTH = 35;
 	GeomMethods geomMethods;
 	
 };

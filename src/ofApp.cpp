@@ -115,8 +115,8 @@ void ofApp::nsOccupy() {
 				}
 			}
 
-			int T0 = (I.x != -1 && I.y != -1 && I.z != -1 && I.Dis(p) > SPINE_DEPTH);
-			int T1 = (J.x != -1 && J.y != -1 && J.z != -1 && J.Dis(p) > SPINE_DEPTH);
+			int T0 = (I.x != -1 && I.y != -1 && I.z != -1 && I.Dis(p) > CELL_LENGTH);
+			int T1 = (J.x != -1 && J.y != -1 && J.z != -1 && J.Dis(p) > CELL_LENGTH);
 
 			if (T0 == 1 && T1 == 1) { segvec.push_back(Seg(I, J));  }
 			else if (T0 == 0 && T1 == 1) { segvec.push_back(Seg(p, J)); }
@@ -215,6 +215,7 @@ void ofApp::genCrvSkeleton() {
 			for (int k = 0; k < xseg.size(); k++) {
 				Pt p = xseg[k].a; Pt q = xseg[k].b;
 				if (a.Dis(b) < p.Dis(q)) { continue; }
+				if (a.Dis(p) < 1 && b.Dis(q)<1) { continue; }
 				Pt I = geomMethods.intxPt(a, b, p, q);
 				if (I.x != -1 && I.y != -1 && I.z != -1) {
 					float d = I.Dis(a);
@@ -232,14 +233,43 @@ void ofApp::genCrvSkeleton() {
 				fseg.push_back(Seg(m, n));
 			}
 		}
-		for (int j = 1; j < fseg.size() - 1; j++) {
-			//fseg.a=point on hull; fseg.b= spine point; 
+		vector<Seg> gseg;
+		for (int j = 0; j < fseg.size(); j++) {
+			Pt a = xseg[j].a; Pt b = xseg[j].b;
+			float minD = BOARD_DIMENSION * 2; int sum = 0;
+			Pt m(-1, -1, -1); Pt n(-1, -1, -1);
+			//dont ignore any intersection
+			for (int k = 0; k < fseg.size(); k++) {
+				Pt p = fseg[k].a; Pt q = fseg[k].b;
+				if (a.Dis(p) < 1 && b.Dis(q) < 1) { continue; }
+				Pt I = geomMethods.intxPt(a, b, p, q);
+				if (I.x != -1 && I.y != -1 && I.z != -1) {
+					float d = I.Dis(a);
+					if (d < minD && d>1) {
+						m = a; n = I; minD = d;
+						sum++;
+					}
+				}
+			}
+			if (sum == 0) {
+				gseg.push_back(Seg(a, b));
+			}
+			else {
+				fseg[j].a = m; fseg[j].b = n;
+				gseg.push_back(Seg(m, n));
+			}
+		}
+
+		for (int j = 1; j < gseg.size() - 1; j++) {
+			//gseg.a=point on hull; fseg.b= spine point; 
 			Pt a, b, c, d;
-			a = fseg[j - 1].a; b = fseg[j - 1].b;
-			d = fseg[j].a; c = fseg[j].b;
+			a = gseg[j - 1].a; b = gseg[j - 1].b;
+			d = gseg[j].a; c = gseg[j].b;
 			Pt I = geomMethods.intxPt(a, c, b, d);
 			if (I.x != -1 && I.y != -1 && I.z != -1) {
-				qv.push_back(Quad(a, b, c, d));
+				if (max(d.Dis(a), b.Dis(c)) < max(c.Dis(d), b.Dis(a))){
+					qv.push_back(Quad(a, b, c, d));
+				}				
 			}
 		}
 		csSpine.clear(); vector<Pt>().swap(csSpine);
@@ -268,23 +298,80 @@ void ofApp::nsGenCell() {
 			Pt s(S.x + v.x*SCALE_HULL, S.y + v.y*SCALE_HULL, S.z + v.z*SCALE_HULL);
 			Pt r(R.x - v.x*SCALE_HULL, R.y - v.y*SCALE_HULL, R.z - v.z*SCALE_HULL);
 			
-			bottom.push_back(p); top.push_back(s);
-			int itr = SPINE_DEPTH;
+			//it is possible that a cell is too long on one side 
+			//because the first segment goes unchecked - pq < rs: forms distorted trapezoidal form
+			float DIS0 = 0; float itr0 = CELL_LENGTH;
+			while (DIS0 < r.Dis(s)) {
+				Pt e(s.x + v.x*itr0, p.y + u.y*itr0, p.z + itr0 * u.z);
+				Pt f = geomMethods.proj(p, e, q);
+				if (abs(e.Dis(s) + e.Dis(r) - s.Dis(r)) < 1) {
+					if (e.Dis(r) > CELL_LENGTH / 2) {
+						if (abs(f.Dis(p) + f.Dis(q) - p.Dis(q)) < 1) {//if the point is outside segemtn but it can be above- handle intersection
+							bottom.push_back(f); top.push_back(e);
+						}
+						else {//handle the intersection -> proj can be above then this dcase is wrong
+							Pt I = geomMethods.intxPt(p, q, e, f);
+							if (I.x != -1 && I.y != -1 && I.z != -1) {
+								bottom.push_back(f); top.push_back(I);
+							}
+						}
+					}
+				}
+				DIS0 = e.Dis(r);
+				itr0 += CELL_LENGTH;
+			}
+
+			//altered the above code  alt below: one line
+			//bottom.push_back(p); top.push_back(s);
+
+			//handle the mid section
+			int itr = CELL_LENGTH;
 			float DIS = 0;
 			while (DIS < p.Dis(q)) {
 				Pt e(p.x + u.x*itr, p.y + u.y*itr, p.z + itr * u.z);
 				Pt f = geomMethods.proj(s, e, r);
+				//when projected, then it may not sit inside 
 				if (abs(e.Dis(q) + e.Dis(p) - p.Dis(q)) < 1) {
-					if (abs(f.Dis(r) + f.Dis(s) - r.Dis(s)) < 1) {
-						if (e.Dis(q) > SPINE_DEPTH / 2) {
+					if (e.Dis(q) > CELL_LENGTH / 2) {
+						if (abs(f.Dis(r) + f.Dis(s) - r.Dis(s)) < 1) {//if the point is outside segemtn but it can be above- handle intersection
 							bottom.push_back(e); top.push_back(f);
+						}
+						else {//handle the intersection -> proj can be above then this dcase is wrong
+							Pt I = geomMethods.intxPt(r, s, e, f);
+							if (I.x != -1 && I.y != -1 && I.z != -1) {
+								bottom.push_back(e); top.push_back(I);
+							}
 						}
 					}
 				}
 				DIS = e.Dis(q);
-				itr += SPINE_DEPTH;
+				itr += CELL_LENGTH;
 			}
-			bottom.push_back(q); top.push_back(r); 
+			//it is possible that a cell is too long on one side 
+			//because the last segment goes unchecked - rs < pq: forms distorted trapezoidal form
+			float DIS1 = 0; float itr1 = CELL_LENGTH;
+			while (DIS1 < p.Dis(q)) {
+				Pt e(p.x + u.x*itr1, p.y + u.y*itr1, p.z + itr1 * u.z);
+				Pt f = geomMethods.proj(s, e, r);
+				if (abs(e.Dis(p) + e.Dis(q) - p.Dis(q)) < 1) {
+					if (e.Dis(q) > CELL_LENGTH / 2) {
+						if (abs(f.Dis(r) + f.Dis(s) - r.Dis(s)) < 1) {//if the point is outside segemtn but it can be above- handle intersection
+							bottom.push_back(e); top.push_back(f);
+						}
+						else {//handle the intersection -> proj can be above then this dcase is wrong
+							Pt I = geomMethods.intxPt(s, r, e, f);
+							if (I.x != -1 && I.y != -1 && I.z != -1) {
+								bottom.push_back(e); top.push_back(I);
+							}
+						}
+					}
+				}
+				DIS1 = e.Dis(q);
+				itr1 += CELL_LENGTH;
+			}
+			//altered the above code  alt below: one line
+			//bottom.push_back(q); top.push_back(r); 
+
 			//cout << "number of cells in quad (col)= " << num << endl;
 			for (int k = 1; k < bottom.size(); k++) {
 				Pt p0 = bottom[k - 1];
@@ -293,6 +380,8 @@ void ofApp::nsGenCell() {
 				Pt p3 = top[k - 1];
 				cellvec.push_back(Cell(p0, p1, p2, p3, k, j, bottom.size()));
 			}
+			
+			
 			vector<Pt>().swap(bottom);
 			vector<Pt>().swap(top);
 		}		
@@ -434,8 +523,8 @@ void ofApp::draw(){
 		}
 		for (int j = 0; j < cellvec.size(); j++) {
 			//cellvec[j].display();
-			//cellvec[j].display2();//discrete cells unmerged MESH
-			//cellvec[j].display3(); //plot diagonals
+			cellvec[j].display2();//discrete cells unmerged MESH
+			cellvec[j].display3(); //plot diagonals
 		}
 	}
 	
