@@ -119,7 +119,7 @@ void ofApp::nsOccupy() {
 			int T1 = (J.x != -1 && J.y != -1 && J.z != -1 && J.Dis(p) > CELL_LENGTH);
 
 			if (T0 == 1 && T1 == 1) { segvec.push_back(Seg(I, J));  }
-			else if (T0 == 0 && T1 == 1) { segvec.push_back(Seg(p, J)); }
+			else if (T0 == 0 && T1 == 1) { segvec.push_back(Seg(p,J)); }
 			else if (T0 == 1 && T1 == 0) { segvec.push_back(Seg(I, p)); }
 		}
 		blockvec.push_back(Block(segvec, hullpts));
@@ -156,7 +156,6 @@ void ofApp::genCrvSkeleton() {
 			Pt b = seg[j].b; Ri.push_back(b);
 			Pt c((a.x + b.x) / 2, (a.y + b.y) / 2, (a.z + b.z) / 2);
 			ofSetColor(0);
-			ofDrawSphere(c.x, c.y, c.z, 3);
 			csSpine.push_back(c);
 		}
 		vector<Seg>xseg; vector<Seg>fseg;
@@ -300,46 +299,46 @@ void ofApp::nsGenCell() {
 			
 			//it is possible that a cell is too long on one side 
 			//because the first segment goes unchecked - pq < rs: forms distorted trapezoidal form
-			float DIS0 = 0; float itr0 = CELL_LENGTH;
-			while (DIS0 < r.Dis(s)) {
-				Pt e(s.x + v.x*itr0, p.y + u.y*itr0, p.z + itr0 * u.z);
-				Pt f = geomMethods.proj(p, e, q);
-				if (abs(e.Dis(s) + e.Dis(r) - s.Dis(r)) < 1) {
-					if (e.Dis(r) > CELL_LENGTH / 2) {
-						if (abs(f.Dis(p) + f.Dis(q) - p.Dis(q)) < 1) {//if the point is outside segemtn but it can be above- handle intersection
-							bottom.push_back(f); top.push_back(e);
-						}
-						else {//handle the intersection -> proj can be above then this dcase is wrong
-							Pt I = geomMethods.intxPt(p, q, e, f);
-							if (I.x != -1 && I.y != -1 && I.z != -1) {
-								bottom.push_back(f); top.push_back(I);
-							}
-						}
-					}
-				}
-				DIS0 = e.Dis(r);
-				itr0 += CELL_LENGTH;
-			}
-
-			//altered the above code  alt below: one line
-			//bottom.push_back(p); top.push_back(s);
+			
+			bottom.push_back(p); top.push_back(s);
 
 			//handle the mid section
 			int itr = CELL_LENGTH;
 			float DIS = 0;
 			while (DIS < p.Dis(q)) {
-				Pt e(p.x + u.x*itr, p.y + u.y*itr, p.z + itr * u.z);
-				Pt f = geomMethods.proj(s, e, r);
-				//when projected, then it may not sit inside 
-				if (abs(e.Dis(q) + e.Dis(p) - p.Dis(q)) < 1) {
-					if (e.Dis(q) > CELL_LENGTH / 2) {
-						if (abs(f.Dis(r) + f.Dis(s) - r.Dis(s)) < 1) {//if the point is outside segemtn but it can be above- handle intersection
-							bottom.push_back(e); top.push_back(f);
+				Pt e;
+				if (p.Dis(q) > r.Dis(s)) {
+					e=Pt(p.x + u.x*itr, p.y + u.y*itr, p.z + itr * u.z);
+					Pt f = geomMethods.proj(s, e, r);				
+					//when projected, then it may not sit inside 
+					if (abs(e.Dis(q) + e.Dis(p) - p.Dis(q)) < 1) {
+						if (e.Dis(q) > CELL_LENGTH / 2) {
+							if (abs(f.Dis(r) + f.Dis(s) - r.Dis(s)) < 1) {//if the point is outside segemtn but it can be above- handle intersection
+								bottom.push_back(e); top.push_back(f);
+							}
+							else {//handle the intersection -> proj can be above then this dcase is wrong
+								Pt I = geomMethods.intxPtExtension(e, f, r, s);
+								if (I.x != -1 && I.y != -1 && I.z != -1) {
+									bottom.push_back(e); top.push_back(I);
+								}
+							}
 						}
-						else {//handle the intersection -> proj can be above then this dcase is wrong
-							Pt I = geomMethods.intxPt(r, s, e, f);
-							if (I.x != -1 && I.y != -1 && I.z != -1) {
-								bottom.push_back(e); top.push_back(I);
+					}
+				}
+				else {
+					e=Pt(s.x + v.x*itr, s.y + v.y*itr, s.z + itr * v.z);
+					Pt f = geomMethods.proj(p, e, q);
+					//when projected, then it may not sit inside 
+					if (abs(e.Dis(s) + e.Dis(r) - s.Dis(r)) < 1) {
+						if (e.Dis(r) > CELL_LENGTH / 2) {
+							if (abs(f.Dis(p) + f.Dis(q) - p.Dis(q)) < 1) {//if the point is outside segemtn but it can be above- handle intersection
+								bottom.push_back(f); top.push_back(e);
+							}
+							else {//handle the intersection -> proj can be above then this dcase is wrong
+								Pt I = geomMethods.intxPtExtension(e, f, p, q);
+								if (I.x != -1 && I.y != -1 && I.z != -1) {
+									bottom.push_back(I); top.push_back(e);
+								}
 							}
 						}
 					}
@@ -347,30 +346,7 @@ void ofApp::nsGenCell() {
 				DIS = e.Dis(q);
 				itr += CELL_LENGTH;
 			}
-			//it is possible that a cell is too long on one side 
-			//because the last segment goes unchecked - rs < pq: forms distorted trapezoidal form
-			float DIS1 = 0; float itr1 = CELL_LENGTH;
-			while (DIS1 < p.Dis(q)) {
-				Pt e(p.x + u.x*itr1, p.y + u.y*itr1, p.z + itr1 * u.z);
-				Pt f = geomMethods.proj(s, e, r);
-				if (abs(e.Dis(p) + e.Dis(q) - p.Dis(q)) < 1) {
-					if (e.Dis(q) > CELL_LENGTH / 2) {
-						if (abs(f.Dis(r) + f.Dis(s) - r.Dis(s)) < 1) {//if the point is outside segemtn but it can be above- handle intersection
-							bottom.push_back(e); top.push_back(f);
-						}
-						else {//handle the intersection -> proj can be above then this dcase is wrong
-							Pt I = geomMethods.intxPt(s, r, e, f);
-							if (I.x != -1 && I.y != -1 && I.z != -1) {
-								bottom.push_back(e); top.push_back(I);
-							}
-						}
-					}
-				}
-				DIS1 = e.Dis(q);
-				itr1 += CELL_LENGTH;
-			}
-			//altered the above code  alt below: one line
-			//bottom.push_back(q); top.push_back(r); 
+			bottom.push_back(q); top.push_back(r); 
 
 			//cout << "number of cells in quad (col)= " << num << endl;
 			for (int k = 1; k < bottom.size(); k++) {
@@ -524,7 +500,7 @@ void ofApp::draw(){
 		for (int j = 0; j < cellvec.size(); j++) {
 			//cellvec[j].display();
 			cellvec[j].display2();//discrete cells unmerged MESH
-			cellvec[j].display3(); //plot diagonals
+			//cellvec[j].display3(); //plot diagonals
 		}
 	}
 	

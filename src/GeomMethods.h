@@ -31,6 +31,7 @@ public:
 	int ptInPoly(vector<Pt>, Pt);
 	int doesintx(Pt, Pt, Pt, Pt);
 	Pt intxPt(Pt, Pt, Pt, Pt);
+	Pt intxPtExtension(Pt, Pt, Pt, Pt);
 	vector<Pt> simplify(vector<Pt>);
 	Pt proj(Pt, Pt, Pt);
 

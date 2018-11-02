@@ -331,7 +331,16 @@ Pt GeomMethods::intxPt(Pt p, Pt q, Pt r, Pt s) {
 	if ((abs(I.Dis(r) + I.Dis(s) - r.Dis(s)) < 1) && (abs(I.Dis(p) + I.Dis(q) - p.Dis(q)) < 1)) { return I; }
 	else { return Pt(-1,-1,-1); }
 }
-
+Pt GeomMethods::intxPtExtension(Pt p, Pt q, Pt r, Pt s) {
+	// extend last two points- ie I on pq but not on rs
+	float a1 = q.z - p.z; float b1 = p.x - q.x;	float c1 = a1 * q.x + b1 * q.z;
+	float a2 = s.z - r.z; float b2 = r.x - s.x; float c2 = a2 * s.x + b2 * s.z;
+	float det = a1 * b2 - a2 * b1; if (det == 0) { return Pt(-1, -1, -1); }
+	float mx = (c1*b2 - c2 * b1) / det; float my = (c2*a1 - c1 * a2) / det;
+	Pt I(mx, 0, my);
+	if ((abs(I.Dis(p) + I.Dis(q) - p.Dis(q)) < 1)) { return I; }
+	else { return Pt(-1, -1, -1); }
+}
 
 //occupation
 vector<vector<Pt>> GeomMethods::spine(vector<Pt> pts, float DE, float SP) {

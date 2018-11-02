@@ -51,14 +51,22 @@ struct Quad {
 		p = a; q = b; r = c; s = d;
 	}
 	void display() {
-		ofSetLineWidth(3);
+		ofSetLineWidth(1);
 		ofSetColor(255, 0, 0);
 		p.y = -5; q.y = -5; r.y = -5, s.y = -5;
 		ofDrawLine(p.x, p.y, p.z, q.x, q.y, q.z);
-		ofDrawLine(q.x, q.y, q.z, r.x, r.y, r.z);
-		ofDrawLine(r.x, r.y, r.z, s.x, s.y, s.z);
-		ofDrawLine(s.x, s.y, s.z, p.x, p.y, p.z);
+		
+		//ofDrawLine(q.x, q.y, q.z, r.x, r.y, r.z);
 
+		ofSetColor(0, 0, 255);
+		ofSetLineWidth(5);
+		ofDrawLine(r.x, r.y, r.z, s.x, s.y, s.z);
+		//ofDrawLine(s.x, s.y, s.z, p.x, p.y, p.z);
+
+		ofSetColor(0, 0, 255);
+		ofDrawSphere(p.x, p.y, p.z, 5);
+		ofSetColor(0, 255, 0);
+		ofDrawSphere(q.x, -10, q.z, 5);
 	}
 };
 
@@ -256,8 +264,8 @@ public:
 	
 	int ITERATION = 0;
 	// ratio of BOARD_DIMENSION : NUM_SITES = 500 : 5; 1500 : 45
-	int BOARD_DIMENSION = 700;
-	int NUM_SITES = 20;
+	int BOARD_DIMENSION = 300;
+	int NUM_SITES = 5;
 	int CELL_LE = BOARD_DIMENSION / 100;
 	int CELL_WI = BOARD_DIMENSION / 100;
 	int SCALE_HULL = 1; //20 // max(10, (int)NUM_SITES / 15);
