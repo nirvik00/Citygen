@@ -49,7 +49,7 @@ struct Quad {
 	}
 	void display() {
 		ofSetLineWidth(1);
-		ofSetColor(0, 0, 0, 150);
+		ofSetColor(0, 0, 0, 50);
 		ofDrawLine(p.x, p.y, p.z, q.x, q.y, q.z);
 		ofDrawLine(q.x, q.y, q.z, r.x, r.y, r.z);
 		ofDrawLine(r.x, r.y, r.z, s.x, s.y, s.z);
@@ -233,7 +233,6 @@ public:
 	vector<vector<Pt>> scaledHullPts;
 	vector<vector<Pt>> intHullPts;
 	vector<vector<Pt>> splinePts;
-	
 
 
 	vector<vector<Pt>> secHullPts;
@@ -242,9 +241,9 @@ public:
 	vector<Block> blockvec;
 	
 	int ITERATION = 0;
-	// ratio of BOARD_DIMENSION : NUM_SITES = 500 : 15; 
-	int BOARD_DIMENSION = 500;
-	int NUM_SITES = 15;
+	// ratio of BOARD_DIMENSION : NUM_SITES = 500 : 5; 
+	int BOARD_DIMENSION = 1500;
+	int NUM_SITES = 45;
 	int CELL_LE = BOARD_DIMENSION / 100;
 	int CELL_WI = BOARD_DIMENSION / 100;
 	int SCALE_HULL = 10; //20 // max(10, (int)NUM_SITES / 15);

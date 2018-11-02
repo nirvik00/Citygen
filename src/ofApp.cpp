@@ -340,7 +340,7 @@ void ofApp::draw(){
 				a = hull[j - 1];
 				b = hull[j];
 			}
-			ofSetLineWidth(1);
+			ofSetLineWidth(3);
 			ofSetColor(255, 0, 255, 100);
 			ofDrawLine(a.x, a.y, a.z, b.x, b.y, b.z);
 		}
@@ -368,6 +368,7 @@ void ofApp::draw(){
 
 
 
+	ofSetLineWidth(1);
 	
 	for (int i = 0; i < blockvec.size(); i++) {
 		vector<Pt>csSpine; 
@@ -378,13 +379,14 @@ void ofApp::draw(){
 			Pt a = seg[j].a; Le.push_back(a);
 			Pt b = seg[j].b; Ri.push_back(b);
 			Pt c((a.x + b.x) / 2, (a.y + b.y) / 2, (a.z + b.z) / 2);
-			ofDrawSphere(c.x, c.y, c.z, 10);
+			ofSetColor(0);
+			ofDrawSphere(c.x, c.y, c.z, 3);
 			csSpine.push_back(c);
 		}
-		vector<Seg>xseg;
+		vector<Seg>xseg; vector<Seg>fseg;
 		for (int j = 1; j < Le.size() - 1; j++) {
 			Pt a = Le[j - 1];
-			Pt b = Le[j]; ofDrawSphere(b.x, b.y, b.z, 10);
+			Pt b = Le[j]; ofDrawSphere(b.x, b.y, b.z, 2);
 			Pt c = Le[j + 1];
 			Pt u((c.x - a.x) / a.Dis(c), (c.y - a.y) / a.Dis(c), (c.z - a.z) / a.Dis(c));
 			Pt v(-u.z, u.y, u.x); Pt w(u.z, u.y, -u.x);
@@ -398,20 +400,22 @@ void ofApp::draw(){
 				Pt I = geomMethods.intxPt(p, b, m, n);
 				Pt J = geomMethods.intxPt(q, b, m, n);
 				if (I.x != -1 && I.y != -1 && I.z != -1) { 
-					ofDrawSphere(I.x, I.y, I.z, 10);
-					ofDrawLine(I.x, I.y, I.z, b.x, b.y, b.z);
+					//ofSetLineWidth(1);
+					//ofDrawLine(b.x, b.y, b.z, I.x, I.y, I.z);
+					//ofSetColor(0, 0, 0, 50);
 					xseg.push_back(Seg(b,I)); 
 				}
 				if (J.x != -1 && J.y != -1 && J.z != -1) { 
-					ofDrawSphere(J.x, J.y, J.z, 10);
-					ofDrawLine(J.x, J.y, J.z, b.x, b.y, b.z);
+					//ofSetLineWidth(1);
+					//ofSetColor(0, 0, 0, 50);
+					//ofDrawLine(b.x, b.y, b.z, J.x, J.y, J.z);
 					xseg.push_back(Seg(b,J)); 
 				}
 			}
 		}
 		for (int j = 1; j < Ri.size() - 1; j++) {
 			Pt a = Ri[j - 1];
-			Pt b = Ri[j]; ofDrawSphere(b.x, b.y, b.z, 10);
+			Pt b = Ri[j]; ofDrawSphere(b.x, b.y, b.z, 2);
 			Pt c = Ri[j + 1];
 			Pt u((c.x - a.x) / a.Dis(c), (c.y - a.y) / a.Dis(c), (c.z - a.z) / a.Dis(c));
 			Pt v(-u.z, u.y, u.x); Pt w(u.z, u.y, -u.x);
@@ -425,16 +429,64 @@ void ofApp::draw(){
 				Pt I = geomMethods.intxPt(p, b, m, n);
 				Pt J = geomMethods.intxPt(q, b, m, n);
 				if (I.x != -1 && I.y != -1 && I.z != -1) {
-					ofDrawSphere(I.x, I.y, I.z, 10);
-					ofDrawLine(I.x, I.y, I.z, b.x, b.y, b.z);
+					//ofSetLineWidth(1);
+					//ofSetColor(0, 0, 0, 50);
+					//ofDrawLine(b.x, b.y, b.z, I.x, I.y, I.z);
 					xseg.push_back(Seg(b, I));
 				}
 				if (J.x != -1 && J.y != -1 && J.z != -1) {
-					ofDrawSphere(J.x, J.y, J.z, 10);
-					ofDrawLine(J.x, J.y, J.z, b.x, b.y, b.z);
+					//ofSetLineWidth(1);
+					//ofSetColor(0, 0, 0, 50);
+					//ofDrawLine(b.x, b.y, b.z, J.x, J.y, J.z);
 					xseg.push_back(Seg(b, J));
 				}
 			}
+		}
+		for (int j = 0; j < xseg.size(); j++) {
+			//xseg.a=point on hull; xseg.b= spine point; 
+			Pt a = xseg[j].a; Pt b = xseg[j].b;
+			float minD = BOARD_DIMENSION * 2; int sum = 0;
+			Pt m(-1, -1, -1); Pt n(-1, -1, -1); 
+			//if this seg is cut by LONGER segment ignore it.
+			for (int k = 0; k < xseg.size(); k++) {
+				Pt p = xseg[k].a; Pt q = xseg[k].b;
+				if (a.Dis(b) < p.Dis(q)) { continue; }
+				Pt I = geomMethods.intxPt(a, b, p, q);
+				if (I.x != -1 && I.y != -1 && I.z != -1) {
+					//ofSetColor(0, 0, 255);
+					//ofDrawSphere(I.x, I.y, I.z, 1);
+					float d = I.Dis(a);
+					if (d < minD && d>1) {
+						m = a; n = I; minD = d;
+						sum++;
+					}
+				}
+			}
+			if (sum == 0) {
+				fseg.push_back(Seg(a, b));
+			}
+			else {
+				xseg[j].a = m; xseg[j].b = n;
+				fseg.push_back(Seg(m, n));
+			}
+		}
+		for (int j = 1; j < fseg.size()-1; j++) {
+			//fseg.a=point on hull; fseg.b= spine point; 
+			Pt a, b, c, d;
+			ofSetLineWidth(1);
+			ofSetColor(0, 0, 0, 50);
+			ofDrawLine(a.x, a.y, a.z, b.x, b.y, b.z);
+			a = fseg[j-1].a; b = fseg[j-1].b;
+			d = fseg[j].a; c = fseg[j].b;
+			Pt I = geomMethods.intxPt(a, c, b, d);
+			if (I.x != -1 && I.y != -1 && I.z != -1) {
+				ofSetLineWidth(1);
+				ofSetColor(255, 0, 0);
+				ofDrawLine(a.x, a.y, a.z, b.x, b.y, b.z);
+				ofDrawLine(b.x, b.y, b.z, c.x, c.y, c.z);
+				ofDrawLine(c.x, c.y, c.z, d.x, d.y, d.z);
+				ofDrawLine(d.x, d.y, d.z, a.x, a.y, a.z);
+			}			
 		}
 		csSpine.clear();
 	}
