@@ -385,10 +385,19 @@ void ofApp::nsGenCell() {
 						minAngle = angArr[ite];
 					}
 				}
-				//cout << "minAngle: "<< minAngle << ", " << PI/3 << endl;
-				Cell cell(p0, p1, p2, p3, k, j, bottom.size(), minAngle);
-				cell.setMinAngle(minAngle);			
-				cellvec.push_back(cell);
+				float d0 = p0.Dis(p1); 
+				float d1 = p0.Dis(p3); 
+				float d2 = p1.Dis(p2);
+				float d3 = p2.Dis(p3);
+				int o0 = (d0 > 0.35*CELL_LENGTH && d0 < 3 * CELL_LENGTH);
+				int o1 = (d1 > 0.35*CELL_LENGTH && d1 < 3 * CELL_LENGTH);
+				int o2 = (d2 > 0.35*CELL_LENGTH && d2 < 3 * CELL_LENGTH);
+				int o3 = (d3 > 0.35*CELL_LENGTH && d3 < 3 * CELL_LENGTH);
+				if (o1 == 1 && o1 == 1 && o2 == 1 && o3 == 1 && minAngle>MIN_CELL_ANGLE) {
+					Cell cell(p0, p1, p2, p3, k, j, bottom.size(), minAngle);
+					cell.setMinAngle(minAngle);
+					cellvec.push_back(cell);
+				}			
 			}		
 			vector<Pt>().swap(bottom);
 			vector<Pt>().swap(top);
@@ -409,7 +418,7 @@ void ofApp::nsRules() {
 		float req_angle = PI / 10;
 		while(itr != blockvec[i].cellvec.end()){
 			int J = (*itr).J; int num = (*itr).Num; float cellang = (*itr).CELL_ANGLE;
-			cout <<"check : "<< cellang << ", " << req_angle << endl;
+			//cout <<"check : "<< cellang << ", " << req_angle << endl;
 			(*itr).CELL_FILL = 0; (*itr).CELL_HEIGHT = 0; 
 			int ht, fill;
 			if (J < 2 || J > num - 2) {

@@ -277,8 +277,9 @@ public:
 	int CELL_LE = BOARD_DIMENSION / 100;
 	int CELL_WI = BOARD_DIMENSION / 100;
 	int SCALE_HULL = 10; //20 // max(10, (int)NUM_SITES / 15);
-	float CELL_LENGTH = 35;
-	float BAY_DEPTH = 35;
+	float CELL_LENGTH = 50;
+	float BAY_DEPTH = 50;
+	float MIN_CELL_ANGLE = PI/10;
 	GeomMethods geomMethods;
 	
 };
