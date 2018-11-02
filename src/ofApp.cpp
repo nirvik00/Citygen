@@ -318,15 +318,14 @@ void ofApp::nsGenCell() {
 							}
 							else {//handle the intersection -> proj can be above then this dcase is wrong
 								//intersection with the joiing edge from r-q NOT r-s
+								//also handle simple case r-s
 								Pt I = geomMethods.intxPt(e, f, r, q);
+								Pt J = geomMethods.intxPt(e, f, r, s);
 								if (I.x != -1 && I.y != -1 && I.z != -1) {
 									bottom.push_back(e); top.push_back(I);
 								}
-								else { //also handle simple case p-q
-									Pt J = geomMethods.intxPt(e, f, p, q);
-									if (J.x != -1 && J.y != -1 && J.z != -1) {
-										bottom.push_back(e); top.push_back(J);
-									}
+								else if (J.x != -1 && J.y != -1 && J.z != -1) {
+									bottom.push_back(e); top.push_back(J);
 								}
 							}
 						}
@@ -343,15 +342,14 @@ void ofApp::nsGenCell() {
 							}
 							else {//handle the intersection -> proj can be above then this dcase is wrong
 								//intersection with the joiing edge from p-q NOT r-q
+								//also handle simple case p-q
 								Pt I = geomMethods.intxPt(e, f, r, q);
+								Pt J = geomMethods.intxPt(e, f, p, q);
 								if (I.x != -1 && I.y != -1 && I.z != -1) {
 									bottom.push_back(I); top.push_back(e);
 								}
-								else {
-									Pt J = geomMethods.intxPt(e, f, p, q);
-									if (J.x != -1 && J.y != -1 && J.z != -1) {
-										bottom.push_back(J); top.push_back(e);
-									}
+								else if (J.x != -1 && J.y != -1 && J.z != -1) {
+									bottom.push_back(J); top.push_back(e);
 								}
 							}
 						}
@@ -509,7 +507,7 @@ void ofApp::draw(){
 		vector<Cell> cellvec = blockvec[i].cellvec;
 		vector<Quad> quads = blockvec[i].blockquadvec;
 		for (int j = 0; j < quads.size(); j++) {
-			quads[j].display();
+			//quads[j].display();
 		}
 		for (int j = 0; j < cellvec.size(); j++) {
 			//cellvec[j].display();
