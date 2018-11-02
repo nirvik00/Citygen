@@ -3,7 +3,6 @@
 #include "ofMain.h"
 #include "GeomMethods.h"
 #include "Pt.h"
-#include "RegionMethods.h"
 
 #include <vector>
 #include <algorithm>
@@ -65,11 +64,12 @@ private:
 
 public:
 	Pt p, q, r, s;
-	int FILL, HEIGHT;
-	int I, J;		
-	Cell(Pt a, Pt b, Pt c, Pt d, int i, int j) {
+	int CELL_FILL=0, CELL_HEIGHT=0.0; 
+	int I, J, Num;		
+	Cell() {}
+	Cell(Pt a, Pt b, Pt c, Pt d, int j, int i, int n) {
 		p = a; q = b; r = c; s = d;
-		I = i; J = j;
+		I = i; J = j; Num = n;
 	}
 	void display() {
 		ofSetLineWidth(1);
@@ -80,62 +80,100 @@ public:
 		ofDrawLine(s.x, s.y, s.z, p.x, p.y, p.z);
 	}
 	void setHeight(int t) {
-		HEIGHT = t;
+		CELL_HEIGHT = t;
 	}
 	void setFill(int t) {
-		FILL = t;
+		CELL_FILL = t;
 	}
 	int getHeight() {
-		return HEIGHT;
+		return CELL_HEIGHT;
 	}
 	int getFill() {
-		return FILL;
+		return CELL_FILL;
 	}
 	void display2() {
-		if (FILL == 1) {
-
-			for (int e = 0; e < HEIGHT; e++) {
+		if (CELL_FILL == 1) {
+			for (int e = 1; e < CELL_HEIGHT; e++) {
 				float i = e * 10;
-				ofSetLineWidth(2);
+				ofSetLineWidth(1);
 				ofSetColor(0, 0, 0);
-				ofDrawLine(p.x, i, p.z, q.x, i, q.z);
-				ofDrawLine(q.x, i, q.z, r.x, i, r.z);
-				ofDrawLine(r.x, i, r.z, s.x, i, s.z);
-				ofDrawLine(s.x, i, s.z, p.x, i, p.z);
-				
-				ofMesh mes;
+				ofMesh mesh;
 				ofPoint p0(p.x, (e - 1) * 10, p.z); ofPoint p1(p.x, e * 10, p.z);
 				ofPoint q0(q.x, (e - 1) * 10, q.z); ofPoint q1(q.x, e * 10, q.z);
 				ofPoint r0(r.x, (e - 1) * 10, r.z); ofPoint r1(r.x, e * 10, r.z);
 				ofPoint s0(s.x, (e - 1) * 10, s.z); ofPoint s1(s.x, e * 10, s.z);
 
-				if (e > 0) {		
+				if (e > 0 && (e < CELL_HEIGHT - 1)) {
+					// avoid boolean operations by eliminating the horizontal lines
+					ofDrawLine(p0, q0); ofDrawLine(q0, r0); ofDrawLine(r0, s0); ofDrawLine(s0, p0);//bottom horizontal
+					ofDrawLine(p1, q1); ofDrawLine(q1, r1); ofDrawLine(r1, s1); ofDrawLine(s1, p1);//top horizontal
+					ofSetLineWidth(2);
+					ofDrawLine(p0, p1); ofDrawLine(q0, q1); ofDrawLine(r0, r1); ofDrawLine(s0, s1);//vertical 
 					
-					mes.addVertex(p0); mes.addVertex(q1); mes.addVertex(q0);
-					mes.addVertex(p0); mes.addVertex(q1); mes.addVertex(p1);
+					//front faces
+					mesh.addVertex(p0); mesh.addVertex(q1); mesh.addVertex(q0);
+					mesh.addVertex(p0); mesh.addVertex(q1); mesh.addVertex(p1);
 
-					mes.addVertex(q0); mes.addVertex(r1); mes.addVertex(r0);
-					mes.addVertex(q0); mes.addVertex(r1); mes.addVertex(q1);
+					mesh.addVertex(q0); mesh.addVertex(r1); mesh.addVertex(r0);
+					mesh.addVertex(q0); mesh.addVertex(r1); mesh.addVertex(q1);
 
-					mes.addVertex(r0); mes.addVertex(s1); mes.addVertex(r1);
-					mes.addVertex(r0); mes.addVertex(s1); mes.addVertex(s0);
+					mesh.addVertex(r0); mesh.addVertex(s1); mesh.addVertex(r1);
+					mesh.addVertex(r0); mesh.addVertex(s1); mesh.addVertex(s0);
 
-					mes.addVertex(p0); mes.addVertex(s1); mes.addVertex(p1);
-					mes.addVertex(p0); mes.addVertex(s1); mes.addVertex(s0);
+					mesh.addVertex(p0); mesh.addVertex(s1); mesh.addVertex(p1);
+					mesh.addVertex(p0); mesh.addVertex(s1); mesh.addVertex(s0);
 					
-					mes.addVertex(p0); mes.addVertex(q0); mes.addVertex(r0);
-					mes.addVertex(p0); mes.addVertex(s0); mes.addVertex(r0);
+					//bottom face
+					mesh.addVertex(p0); mesh.addVertex(q0); mesh.addVertex(r0);
+					mesh.addVertex(p0); mesh.addVertex(s0); mesh.addVertex(r0);
 
+					//top face 
+					mesh.addVertex(p1); mesh.addVertex(q1); mesh.addVertex(r1);
+					mesh.addVertex(p1); mesh.addVertex(s1); mesh.addVertex(r1);
+					
 				}
-				if (e == HEIGHT-1) {
-					mes.addVertex(p1); mes.addVertex(q1); mes.addVertex(r1);
-					mes.addVertex(p1); mes.addVertex(s1); mes.addVertex(r1);
+				else {
+					ofSetLineWidth(2);
+					//show the roof line for clarity
+					//ofDrawLine(p0, q0); ofDrawLine(q0, r0); ofDrawLine(r0, s0); ofDrawLine(s0, p0);//bottom horizontal
 				}
-				mes.setupIndicesAuto();
+				mesh.setupIndicesAuto();
 				ofSetColor(150, 150, 150);
-				mes.draw();
-				
+				mesh.draw();
 			}	
+		}
+		else {
+			ofMesh mesh;
+			ofPoint p0(p.x, 0, p.z);
+			ofPoint q0(q.x, 0, q.z);
+			ofPoint r0(r.x, 0, r.z);
+			ofPoint s0(s.x, 0, s.z);
+			//bottom face
+			mesh.addVertex(p0); mesh.addVertex(q0); mesh.addVertex(r0);
+			mesh.addVertex(p0); mesh.addVertex(s0); mesh.addVertex(r0);
+			mesh.setupIndicesAuto();
+			ofSetColor(150, 255, 150);
+			mesh.draw();
+		}
+	}
+	void display3() {
+		if (J < 3) {
+			ofSetLineWidth(1);
+			ofSetColor(255, 0, 0);
+			ofDrawLine(p.x, p.y, p.z, r.x, r.y, r.z);
+			ofDrawLine(q.x, q.y, q.z, s.x, s.y, s.z);
+		}
+		else if (J > Num - 3) {
+			ofSetLineWidth(1);
+			ofSetColor(0, 0, 255);
+			ofDrawLine(p.x, p.y, p.z, r.x, r.y, r.z);
+			ofDrawLine(q.x, q.y, q.z, s.x, s.y, s.z);
+		}
+		else {
+			ofSetLineWidth(1);
+			ofSetColor(0, 255, 0);
+			ofDrawLine(p.x, p.y, p.z, r.x, r.y, r.z);
+			ofDrawLine(q.x, q.y, q.z, s.x, s.y, s.z);
 		}
 	}
 };
@@ -146,6 +184,7 @@ public:
 	vector<Pt> hullpts;
 	vector<Quad> blockquadvec;
 	vector<Cell> cellvec;
+	vector<vector<Cell>> rowcellvec; //vector of cells in a row
 	Block(vector<Seg> s, vector<Pt>p_) {
 		seg = s; hullpts = p_;
 	}
@@ -161,14 +200,12 @@ public:
 	}
 };
 
-
-
 class ofApp : public ofBaseApp {
 public:
 	void nsInit();
 	void nsOccupy();
 	void nsGenCell();
-	void nsInteract();
+	void nsRules();
 
 	void setup();
 	void update();
@@ -197,19 +234,18 @@ public:
 	vector<vector<Pt>> intHullPts;
 	vector<vector<Pt>> splinePts;
 
-	vector<RegionMethods> regVec;
 	vector<Seg> spinevec;
 	vector<Block> blockvec;
 	
 	int ITERATION = 0;
-	int BOARD_DIMENSION = 1500;
-	int NUM_SITES = 25;
+	// ratio of BOARD_DIMENSION : NUM_SITES = 500 : 15; 
+	int BOARD_DIMENSION = 500;
+	int NUM_SITES = 15;
 	int CELL_LE = BOARD_DIMENSION / 100;
 	int CELL_WI = BOARD_DIMENSION / 100;
-	int SCALE_HULL = (int)NUM_SITES/5;
+	int SCALE_HULL = 10; //20 // max(10, (int)NUM_SITES / 15);
 	float SPINE_DEPTH = 50;
 	float BAY_DEPTH = 50;
 	GeomMethods geomMethods;
-
 	
 };

@@ -5,7 +5,6 @@
 
 #include <vector>
 #include "Pt.h"
-#include "RegionMethods.h"
 
 class GeomMethods
 {
@@ -31,6 +30,8 @@ public:
 	int doesintx(Pt, Pt, Pt, Pt);
 	Pt intxPt(Pt, Pt, Pt, Pt);
 	vector<Pt> simplify(vector<Pt>);
+	Pt proj(Pt, Pt, Pt);
+
 
 	//occupation
 	vector<vector<Pt>> spine(vector<Pt>, float, float);

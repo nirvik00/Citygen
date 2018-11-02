@@ -63,6 +63,7 @@ vector<vector<Pt>> GeomMethods::gridPtsInSite(vector<Pt> sitePtVec, vector<Pt>gr
 			}
 		}
 		gridPtsInHull.push_back(temp);
+		temp.clear(); vector<Pt>().swap(temp);
 	}
 	return gridPtsInHull;
 }
@@ -83,6 +84,8 @@ vector<vector<Pt>> GeomMethods::initConvexHull(vector<Pt> sitePtVec, vector<Pt>g
 		if (tempHullPts.size() > 3) {
 			hullPts.push_back(tempHullPts);
 		}
+		temp.clear(); vector<Pt>().swap(temp);
+		tempHullPts.clear(); vector<Pt>().swap(tempHullPts);
 	}
 	return hullPts;
 }
@@ -243,6 +246,14 @@ vector<Pt> GeomMethods::simplify(vector<Pt> pts) {
 	return new_pts;
 }
 
+Pt GeomMethods::proj(Pt a, Pt b, Pt c) {
+	//proj b on ac
+	Pt u(a.x - c.x, a.y - c.y, a.z - c.z); Pt v(b.x - c.x, b.y - c.y, b.z - c.z);
+	float e = (u.x*v.x + u.y*v.y + u.z*v.z) / (c.Dis(a)*c.Dis(a));
+	Pt r(c.x + (e*u.x), c.y + (e*u.y), c.z + (e*u.z));
+	return r;
+}
+
 int GeomMethods::doesintx(Pt p, Pt q, Pt r, Pt s) {
 	float a1 = q.z - p.z; float b1 = p.x - q.x;	float c1 = a1 * q.x + b1 * q.z;
 	float a2 = s.z - r.z; float b2 = r.x - s.x; float c2 = a2 * s.x + b2 * s.z;
@@ -334,6 +345,7 @@ vector<vector<Pt>> GeomMethods::spine(vector<Pt> pts, float DE, float SP) {
 			}
 		}
 		PTS.push_back(temp);
+		temp.clear(); vector<Pt>().swap(temp);
 	}
 	return PTS;
 }
@@ -361,6 +373,7 @@ vector<Pt> GeomMethods::cubicSubdiv(vector<Pt> pts) {
 		temp.push_back(r);
 	}
 	vector<Pt> spline = cubicAvg(temp);
+	temp.clear(); vector<Pt>().swap(temp);
 	return spline;
 }
 

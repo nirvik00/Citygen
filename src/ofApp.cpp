@@ -1,5 +1,7 @@
 #include "ofApp.h"
 
+
+/* ns methods  */
 void ofApp::nsInit() {
 	ITERATION++;
 	std::cout << "1->2 Command received at nsINIT" << endl;
@@ -38,34 +40,7 @@ void ofApp::nsInit() {
 	hullPts = geomMethods.initConvexHull(sitePtVec, gridPtVec);
 	std::cout << "\t REGIONS constructed...going to next step" << endl;
 
-	//scale hull down	
-	for (int i = 0; i < hullPts.size(); i++) {
-		vector<Pt>temp = hullPts[i];
-		vector<Pt> newPts;
-		for (int j = 0; j < temp.size(); j++) {
-			Pt a, b;
-			if (j == 0) {
-				a = temp[temp.size() - 1];
-				b = temp[0];
-			}
-			else {
-				a = temp[j - 1];
-				b = temp[j];
-			}			
-			Pt c((a.x + b.x) / 2, (a.y + b.y) / 2, (a.z + b.z) / 2);
-			float d = a.Dis(b);
-			Pt u((b.x - a.x) / d, (b.y - a.y) / d, (b.z - a.z) / d);
-			float sc = SCALE_HULL;
-			Pt v(c.x - u.z*sc, c.y + u.y, c.z + u.x*sc);
-			if (geomMethods.ptInPoly(temp, v) == 1) {
-				newPts.push_back(v);
-			}			
-		}
-		vector<Pt> tempHullPts = geomMethods.genConvexHull(newPts);
-		scaleHullPts.push_back(tempHullPts);
-	}
-	
-	//scaleHullPts = hullPts;
+	scaleHullPts = hullPts;
 	std::cout << "\t Hulls constructed...going to next step" << endl;
 	nsOccupy();
 }
@@ -129,15 +104,7 @@ void ofApp::nsOccupy() {
 
 			int T0 = (I.x != -1 && I.y != -1 && I.z != -1 && I.Dis(p) > SPINE_DEPTH);
 			int T1 = (J.x != -1 && J.y != -1 && J.z != -1 && J.Dis(p) > SPINE_DEPTH);
-			
-			/*
-			if (T0 == 1) {
-				segvecL.push_back(Seg(p, I));
-			}
-			if (T1 == 1) {
-				segvecR.push_back(Seg(p, J));
-			}
-			*/
+
 			if (T0 == 1 && T1 == 1) { segvec.push_back(Seg(I, J)); }
 			else if (T0 == 0 && T1 == 1) { segvec.push_back(Seg(p, J)); }
 			else if (T0 == 1 && T1 == 0) { segvec.push_back(Seg(I, p)); }
@@ -162,6 +129,8 @@ void ofApp::nsOccupy() {
 }
 
 void ofApp::nsGenCell() {
+	/*
+	//INTERPOLATION
 	for (int i = 0; i < blockvec.size(); i++) {
 		vector<Quad>qvec = blockvec[i].blockquadvec;
 		vector<Cell>cellvec;
@@ -173,55 +142,137 @@ void ofApp::nsGenCell() {
 			for (float k = 0.f; k < 1.0; k += 0.1) {
 				Pt a(p.x + (q.x - p.x)*k, p.y + (q.y - p.y)*k, p.z + (q.z - p.z)*k);
 				Pt b(s.x + (r.x - s.x)*k, s.y + (r.y - s.y)*k, s.z + (r.z - s.z)*k);
-				//ofDrawLine(a.x, a.y, a.z, b.x, b.y, b.z);
-				bottom.push_back(a); top.push_back(b);
+								//ofDrawLine(a.x, a.y, a.z, b.x, b.y, b.z);
+					bottom.push_back(a); top.push_back(b);
 				Pt p0, p1, p2, p3;
 				if (itr > 0) {
 					p0 = bottom[itr - 1]; p1 = bottom[itr]; p2 = top[itr]; p3 = top[itr - 1];
-					cellvec.push_back(Cell(p0, p1, p2, p3, itr, j));
+					cellvec.push_back(Cell(p0, p1, p2, p3, itr, j, 10));
 				}
 				itr++;
 			}
 		}
 		blockvec[i].setCellVec(cellvec);
 	}
+	*/
+	
+	//FOCUS ON ORTHO INTERIOR
+	for (int i = 0; i < blockvec.size(); i++) {
+		vector<Cell>cellvec;
+		vector<vector<Cell>> rowcellvec;
+		vector<Quad>qvec = blockvec[i].blockquadvec;
+		for (int j = 0; j < qvec.size(); j++) {
+			vector<Pt>bottom; vector<Pt>top;
+
+			Pt P = qvec[j].p; Pt Q = qvec[j].q; float dpq = P.Dis(Q);
+			Pt u((Q.x - P.x) / dpq, (Q.y - P.y) / dpq, (Q.z - P.z) / dpq);
+			Pt p(P.x + u.x*SCALE_HULL, P.y + u.y*SCALE_HULL, P.z + u.z*SCALE_HULL);
+			Pt q(Q.x - u.x*SCALE_HULL, Q.y - u.y*SCALE_HULL, Q.z - u.z*SCALE_HULL);
+
+			Pt R = qvec[j].r; Pt S = qvec[j].s; float drs = R.Dis(S);
+			Pt v((R.x - S.x) / drs, (R.y - S.y) / drs, (R.z - S.z) / drs);			
+			Pt s(S.x + v.x*SCALE_HULL, S.y + v.y*SCALE_HULL, S.z + v.z*SCALE_HULL);
+			Pt r(R.x - v.x*SCALE_HULL, R.y - v.y*SCALE_HULL, R.z - v.z*SCALE_HULL);
+			
+			bottom.push_back(p); top.push_back(s);
+			int itr = SPINE_DEPTH;
+			float DIS = 0;
+			while (DIS < p.Dis(q)) {
+				Pt e(p.x + u.x*itr, p.y + u.y*itr, p.z + itr * u.z);
+				Pt f = geomMethods.proj(s, e, r);
+				if (abs(e.Dis(q) + e.Dis(p) - p.Dis(q)) < 1) {
+					if (abs(f.Dis(r) + f.Dis(s) - r.Dis(s)) < 1) {
+						if (e.Dis(q) > SPINE_DEPTH / 2) {
+							bottom.push_back(e); top.push_back(f);
+						}
+					}
+				}
+				DIS = e.Dis(q);
+				itr += SPINE_DEPTH;
+			}
+			bottom.push_back(q); top.push_back(r); 
+			//cout << "number of cells in quad (col)= " << num << endl;
+			for (int k = 1; k < bottom.size(); k++) {
+				Pt p0 = bottom[k - 1];
+				Pt p1 = bottom[k];
+				Pt p2 = top[k];
+				Pt p3 = top[k - 1];
+				cellvec.push_back(Cell(p0, p1, p2, p3, k, j, bottom.size()));
+			}
+			vector<Pt>().swap(bottom);
+			vector<Pt>().swap(top);
+		}		
+		blockvec[i].setCellVec(cellvec);
+		vector<Cell>().swap(cellvec);
+	}
 	std::cout << "Objective complete at nsGENCELL" << endl;
-	nsInteract();
+	nsRules();
 }
 
-void ofApp::nsInteract() {
+void ofApp::nsRules() {
 	//interact cells and display updated  form
 	for (int i = 0; i < blockvec.size(); i++) {
-		vector<Cell>::iterator j = blockvec[i].cellvec.begin();
-		while(j!= blockvec[i].cellvec.end()){
-			int J = (*j).J;
+		vector<Cell>::iterator itr = blockvec[i].cellvec.begin();
+		while(itr != blockvec[i].cellvec.end()){
+			int J = (*itr).J; int num = (*itr).Num;
+			(*itr).CELL_FILL = 0; (*itr).CELL_HEIGHT = 0;
 			int ht, fill;
-			if (J < 3 || J>7) {
-				int R = ofRandom(0, 10);
-				if (R > 3) {
+			if (J < 2 || J > num - 2) {
+				int R = ofRandom(0, 10); 
+				if (R > 0) {
 					fill = 1;
 				}
 				else {
 					fill = 0;
 				}
-				int S = ofRandom(0, 10);
-				if (S < 4) {
-					ht = 1;
-				}
-				else if (S > 3 && S < 5) {
-					ht = 2;
+			}
+			else {
+				int interior_hull = ofRandom(0, 10);
+				if (interior_hull > 5) {
+					fill = 1;
 				}
 				else {
-					ht = 4;
+					fill = 0;
+				}				
+			}
+			if(fill==1){
+				int S = ofRandom(0, 10);
+				if (J<3 || J>num - 3) {
+					if (S < 4) {
+						ht = 3;
+					}
+					else if (S > 3 && S < 7) {
+						ht = 5;
+					}
+					else {
+						ht = 8;
+					}
 				}
-				(*j).HEIGHT=ht;
-				(*j).FILL=fill;
+				else {//interiro hull
+					if (S < 4) {
+						ht = 5;
+					}
+					else if (S > 3 && S < 5) {
+						ht = 7;
+					}
+					else {
+						ht = 18;
+					}
+				}				
+				(*itr).CELL_HEIGHT=ht;
+				(*itr).CELL_FILL=fill;
 			}	
-			j++;
+			itr++;
 		}
 	}
 	std::cout << "Objective complete at nsINTERACTION" << endl;
+	/* post process cells - merging */
 }
+
+
+
+
+/* frameworks */
 
 void ofApp::setup(){
 	//light.enable();
@@ -255,7 +306,7 @@ void ofApp::draw(){
 				b = hull[j];
 			}
 			ofSetLineWidth(1);
-			ofSetColor(255, 100, 0, 100);
+			ofSetColor(255, 100, 0, 200);
 			ofDrawLine(a.x, a.y, a.z, b.x, b.y, b.z);
 		}
 	}
@@ -278,12 +329,18 @@ void ofApp::draw(){
 		}
 	}
 
+
 	//display CElls
 	for (int i = 0; i < blockvec.size(); i++) {
 		vector<Cell> cellvec = blockvec[i].cellvec;
+		vector<Quad> quads = blockvec[i].blockquadvec;
+		//for (int j = 0; j < quads.size(); j++) {
+			//quads[j].display();
+		//}
 		for (int j = 0; j < cellvec.size(); j++) {
-			cellvec[j].display();
-			cellvec[j].display2();
+			//cellvec[j].display();
+			cellvec[j].display2();//discrete cells unmerged MESH
+			//cellvec[j].display3(); //plot diagonals
 		}
 	}
 
@@ -299,7 +356,7 @@ void ofApp::keyPressed(int key) {
 
 	if (key == 'i') {
 		std::cout << "\n\n INTERACTion command" << endl;
-		nsInteract();
+		nsRules();
 	}
 
 	if (key == 's') {
@@ -350,3 +407,4 @@ void ofApp::gotMessage(ofMessage msg){
 void ofApp::dragEvent(ofDragInfo dragInfo){ 
 
 }
+
