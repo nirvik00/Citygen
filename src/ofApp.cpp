@@ -436,7 +436,7 @@ void ofApp::nsRules() {
 						ht = 8;
 					}
 				}
-				else {//interiro hull
+				else {//interior hull
 					if (S < 4) {
 						ht = 5;
 					}
@@ -449,7 +449,7 @@ void ofApp::nsRules() {
 				}				
 				(*itr).CELL_HEIGHT=ht;
 				(*itr).CELL_FILL=fill;
-			}	
+			}
 			itr++;
 		}
 	}
@@ -565,17 +565,17 @@ void ofApp::draw(){
 	
 	ofSetLineWidth(1);
 	cam.end();
-	ofDrawBitmapStringHighlight("Press 'r' or 'R' to reconfigure organization\nPress 'i' or 'I' to reconfigure buildings", 10, 20);
+	ofDrawBitmapStringHighlight("Press 'r' or 'R' to reconfigure organization\nPress 'i' or 'I' to reconfigure buildings\nUsual 3d capabilities: orbit, zoom, pan", 10, 20);
 	ofDrawBitmapStringHighlight("student: Nirvik Saha\nadviser: Dennis R Shelden, John R Haymaker", 10, ofGetWindowHeight() - 20);
 }
 
 void ofApp::keyPressed(int key) {
-	if (key == 'r') { 		
+	if (key == 'r' || key == 'R') {
 		cout << "\n\n\nUSER Command: "<< ITERATION <<", for new board" << endl;
 		nsInit(); 
 	}
 
-	if (key == 'i') {
+	if (key == 'i' || key == 'I') {
 		std::cout << "\n\n INTERACTion command" << endl;
 		nsRules();
 	}

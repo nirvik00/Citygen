@@ -163,7 +163,8 @@ public:
 					//ofDrawLine(p0, q0); ofDrawLine(q0, r0); ofDrawLine(r0, s0); ofDrawLine(s0, p0);//bottom horizontal
 				}
 				mesh.setupIndicesAuto();
-				ofSetColor(colr.re, colr.gr, colr.bl);
+				//ofSetColor(colr.re, colr.gr, colr.bl);
+				ofSetColor(150, 150, 150);
 				mesh.draw();
 			}	
 		}
@@ -177,7 +178,7 @@ public:
 			mesh.addVertex(p0); mesh.addVertex(q0); mesh.addVertex(r0);
 			mesh.addVertex(p0); mesh.addVertex(s0); mesh.addVertex(r0);
 			mesh.setupIndicesAuto();
-			ofSetColor(colr.re, colr.gr, colr.bl);
+			ofSetColor(0, 250, 0);
 			mesh.draw();
 		}
 	}
@@ -281,8 +282,8 @@ public:
 	
 	int ITERATION = 0;
 	// ratio of BOARD_DIMENSION : NUM_SITES = 500 : 5; 1500 : 45
-	int BOARD_DIMENSION = 700;
-	int NUM_SITES = 7;
+	int BOARD_DIMENSION = 1000;
+	int NUM_SITES = 5;
 	int CELL_LE = BOARD_DIMENSION / 100;
 	int CELL_WI = BOARD_DIMENSION / 100;
 	int SCALE_HULL = 10; //20 // max(10, (int)NUM_SITES / 15);
