@@ -293,4 +293,4 @@ public:
 	GeomMethods geomMethods;
 	float REQ_FAR = 2.5;
 	
-};
+};	

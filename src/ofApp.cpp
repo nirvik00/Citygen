@@ -565,7 +565,7 @@ void ofApp::draw(){
 	
 	ofSetLineWidth(1);
 	cam.end();
-	ofDrawBitmapStringHighlight("Press 'r' or 'R' to reconfigure organization\nPress 'i' or 'I' to reconfigure buildings\nUsual 3d capabilities: orbit, zoom, pan", 10, 20);
+	ofDrawBitmapStringHighlight("Press 'r' or 'R' to reconfigure organization\nPress 'i' or 'I' to reconfigure buildings\nUsual 3d capabilities: orbit, zoom, pan\norbit: LEFT Mouse DRAG\npan: MIDDLE MOUSE DRAG \nzoom: RIGHT mouse DRAG, Scroll", 10, 20);
 	ofDrawBitmapStringHighlight("student: Nirvik Saha\nadviser: Dennis R Shelden, John R Haymaker", 10, ofGetWindowHeight() - 20);
 }
 
@@ -576,10 +576,20 @@ void ofApp::keyPressed(int key) {
 	}
 
 	if (key == 'i' || key == 'I') {
-		std::cout << "\n\n INTERACTion command" << endl;
+		cout << "\n\n\nUSER Command: " << ITERATION << ", re-organize board" << endl;
 		nsRules();
+		nscomputeArea();
 	}
-
+	if (key == 'a' || key == 'A') {
+		cout << "\n\n\nUSER Command: " << ITERATION << ", reduce num_sites" << endl;
+		NUM_SITES -= 1;
+		nsInit();
+	}
+	if (key == 'b' || key == 'B') {
+		cout << "\n\n\nUSER Command: " << ITERATION << ", increase num_sites" << endl;
+		NUM_SITES += 1;
+		nsInit();
+	}
 	if (key == 's') {
 		for (int i = 0; i < blockvec.size(); i++) {
 			vector<Cell> cellvec = blockvec[i].cellvec;
